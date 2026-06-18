@@ -111,6 +111,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cont-wa{font-size:11px;font-weight:700;padding:6px 12px;border-radius:20px;background:rgba(37,211,102,.15);color:#25D366;border:none;cursor:pointer;text-decoration:none}
 .cont-wa-off{background:var(--bg4);color:var(--text3)}
 .cont-add{font-size:11px;font-weight:700;padding:6px 11px;border-radius:20px;background:var(--accent-dim);color:var(--accent);border:none;cursor:pointer}
+.mb-action-row{display:flex;gap:8px;padding:10px 13px;border-top:1px solid var(--border)}
+.mb-act-btn{flex:1;padding:10px;border-radius:var(--r-md);border:1px solid var(--border2);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.mb-act-confirm{background:var(--s-conf-bg);color:var(--s-conf);border-color:rgba(74,232,112,.4)}
+.mb-act-indisp{background:var(--s-ind-bg);color:var(--s-ind);border-color:rgba(255,92,92,.4)}
+.mb-act-reservar{background:var(--accent-dim);color:var(--accent);border-color:rgba(255,92,0,.3)}
 .sug-wrap{padding:4px 13px 9px}
 .sug-title{font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
 .sug-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--bg3);border-radius:var(--r-sm);margin-bottom:4px;cursor:pointer}
@@ -243,6 +248,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bk-ts{font-size:12px;color:var(--text2)}
 .bk-count{font-size:11px;color:var(--text3)}
 .bk-restore{font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px;background:var(--accent-dim);color:var(--accent);border:none;cursor:pointer}
+.login-gate{position:fixed;inset:0;z-index:500;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{width:100%;max-width:340px}
+.login-logo{width:52px;height:52px;border-radius:14px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;margin:0 auto 14px}
+.login-title{font-size:16px;font-weight:700;text-align:center;margin-bottom:22px;color:var(--text)}
+.login-tabs{display:flex;gap:6px;margin-bottom:20px;background:var(--bg2);border-radius:var(--r-md);padding:4px}
+.login-tab{flex:1;padding:9px;border:none;border-radius:var(--r-sm);background:transparent;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.login-tab.active{background:var(--bg3);color:var(--text)}
+.login-form{display:flex;flex-direction:column}
+.login-label{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;margin-top:10px}
+.login-input{width:100%;padding:11px 13px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);color:var(--text);font-size:14px;outline:none;font-family:inherit;-webkit-appearance:none}
+.login-input:focus{border-color:var(--accent)}
+.login-error{font-size:12px;color:var(--s-ind);min-height:16px;margin-top:8px;text-align:center}
+.login-submit{width:100%;padding:13px;border:none;border-radius:var(--r-md);background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;font-family:inherit}
+.login-submit:active{opacity:.85}
 .bnav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--bg2);border-top:1px solid var(--border);display:flex;padding:7px 0 20px}
 .bnav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;cursor:pointer;border:none;background:transparent;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.02em;transition:color .15s}
 .bnav-tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -251,21 +270,58 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </head>
 <body>
 
+<!-- LOGIN GATE -->
+<div id="login-gate" class="login-gate">
+  <div class="login-box">
+    <div class="login-logo">MD</div>
+    <div class="login-title">Mais Delivery — Turnos</div>
+    <div class="login-tabs">
+      <button class="login-tab active" id="ltab-gerencial" onclick="switchLoginTab('gerencial')">Equipe Gerencial</button>
+      <button class="login-tab" id="ltab-motoboy" onclick="switchLoginTab('motoboy')">Sou Motoboy</button>
+    </div>
+
+    <form id="login-form-gerencial" class="login-form" autocomplete="on" onsubmit="return doLoginGerencial(event)">
+      <label class="login-label" for="lg-email">E-mail</label>
+      <input class="login-input" type="email" id="lg-email" name="username" autocomplete="username" placeholder="seu@email.com" required>
+      <label class="login-label" for="lg-senha">Senha</label>
+      <input class="login-input" type="password" id="lg-senha" name="password" autocomplete="current-password" placeholder="Senha" required>
+      <div class="login-error" id="lg-error"></div>
+      <button class="login-submit" type="submit">Entrar</button>
+    </form>
+
+    <form id="login-form-motoboy" class="login-form" style="display:none" autocomplete="on" onsubmit="return doLoginMotoboy(event)">
+      <label class="login-label" for="lm-nome">Seu nome</label>
+      <select class="login-input" id="lm-nome" name="username" autocomplete="username" required></select>
+      <label class="login-label" for="lm-senha">Senha</label>
+      <input class="login-input" type="password" id="lm-senha" name="password" autocomplete="current-password" placeholder="Senha" required>
+      <div class="login-error" id="lm-error"></div>
+      <button class="login-submit" type="submit">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<div id="app-root" style="display:none">
+
 <div class="topbar">
   <div class="topbar-brand">
     <div class="topbar-logo">MD</div>
     <div>
       <div class="topbar-name">Turnos <span class="backup-dot" id="bk-dot" title="Backup salvo"></span></div>
-      <div class="topbar-role">Gerente</div>
+      <div class="topbar-role" id="topbar-role-label">Gerente</div>
     </div>
   </div>
   <div class="topbar-right">
-    <div class="icon-btn" onclick="openSheet('bk-sheet')" title="Backups">
+    <div class="icon-btn" id="btn-backups" onclick="openSheet('bk-sheet')" title="Backups">
       <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
     </div>
-    <div class="icon-btn" onclick="openSheet('cfg-sheet')" title="Config">
+    <div class="icon-btn" id="btn-config" onclick="openSheet('cfg-sheet')" title="Config">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </div>
+    <div class="icon-btn" onclick="doLogout()" title="Sair">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </div>
+  </div>
+</div>
   </div>
 </div>
 
@@ -425,7 +481,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </button>
 </nav>
 
+</div><!-- /app-root -->
+
 <script>
+// Acesso seguro ao localStorage: nunca deixa o app travar se o armazenamento
+// estiver bloqueado (modo privado, origem opaca ao abrir arquivo local, etc.)
+function safeGet(key){
+  try{return localStorage.getItem(key)}catch(e){return null}
+}
+function safeSet(key,val){
+  try{localStorage.setItem(key,val);return true}catch(e){console.warn('Storage indisponível:',e.message);return false}
+}
+function safeRemove(key){
+  try{localStorage.removeItem(key)}catch(e){}
+}
+
 const JS_DAYS=['dom','seg','ter','qua','qui','sex','sab'];
 const DAY_LBL={dom:'Dom',seg:'Seg',ter:'Ter',qua:'Qua',qui:'Qui',sex:'Sex',sab:'Sáb'};
 const DAY_FULL={dom:'Domingo',seg:'Segunda',ter:'Terça',qua:'Quarta',qui:'Quinta',sex:'Sexta',sab:'Sábado'};
@@ -478,29 +548,29 @@ const TODOS_FERIADOS=[...FERIADOS_NAC,...FERIADOS_MUN].sort((a,b)=>a.data.locale
 let EVENTOS_LOCAIS=[];
 
 let EQUIPE=[
-  {nome:'Wesley',tel:'(69) 99241-4968',wa:'5569992414968',pix:'99241-4968',obs:'',bag:null,bagTs:null,disp:{dom:['noite'],seg:['noite'],ter:['noite'],qua:['noite'],qui:['noite'],sex:['noite'],sab:['noite']}},
-  {nome:'Willian',tel:'(69) 99992-5574',wa:'5569999925574',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:['noite'],sab:['manha','tarde']}},
-  {nome:'Joel',tel:'(69) 99914-9208',wa:'5569999149208',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:['manha','noite'],ter:['manha'],qua:['manha','noite'],qui:['manha'],sex:['manha'],sab:['manha']}},
-  {nome:'Eduardo',tel:'(69) 99245-6844',wa:'5569992456844',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:['tarde'],ter:['tarde'],qua:['tarde'],qui:['tarde'],sex:['tarde'],sab:['tarde']}},
-  {nome:'Samuel',tel:'(11) 94074-9946',wa:'5511940749946',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:['tarde'],ter:['tarde'],qua:['tarde'],qui:['tarde'],sex:['tarde'],sab:['tarde']}},
-  {nome:'Roberto',tel:'(69) 99300-4211',wa:'5569993004211',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:['manha'],seg:[],ter:[],qua:[],qui:['noite'],sex:[],sab:[]}},
-  {nome:'Marcos',tel:'(69) 99984-1869',wa:'5569999841869',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:[],qua:[],qui:['noite'],sex:[],sab:['tarde']}},
-  {nome:'Sidnei',tel:'(69) 99286-9852',wa:'5569992869852',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:['noite'],qua:['noite'],qui:[],sex:['noite'],sab:['noite']}},
-  {nome:'Matheus',tel:'(69) 99340-0592',wa:'5569993400592',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:['noite'],sab:['noite']}},
-  {nome:'Gabriel Paulino',tel:'(69) 98403-5050',wa:'5569984035050',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:['manha','noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
-  {nome:'Natan',tel:'(27) 99614-4129',wa:'5527996144129',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
-  {nome:'Rafael',tel:'(69) 99310-3204',wa:'5569993103204',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Luan Maikon',tel:'(66) 99200-3351',wa:'5566992003351',pix:'',obs:'',bag:null,bagTs:null,disp:{dom:['manha','noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
-  {nome:'Judialien',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Diego Barbosa',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:['noite'],qua:['noite'],qui:[],sex:[],sab:[]}},
-  {nome:'Pedro Jalles',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Diego Gervazio',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'David',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Ronaldo',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Guilherme',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Andrey',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'M. Augusto',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Helio',tel:null,wa:null,pix:'',obs:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}}
+  {nome:'Wesley',tel:'(69) 99241-4968',wa:'5569992414968',pix:'99241-4968',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['noite'],seg:['noite'],ter:['noite'],qua:['noite'],qui:['noite'],sex:['noite'],sab:['noite']}},
+  {nome:'Willian',tel:'(69) 99992-5574',wa:'5569999925574',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:['noite'],sab:['manha','tarde']}},
+  {nome:'Joel',tel:'(69) 99914-9208',wa:'5569999149208',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:['manha','noite'],ter:['manha'],qua:['manha','noite'],qui:['manha'],sex:['manha'],sab:['manha']}},
+  {nome:'Eduardo',tel:'(69) 99245-6844',wa:'5569992456844',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:['tarde'],ter:['tarde'],qua:['tarde'],qui:['tarde'],sex:['tarde'],sab:['tarde']}},
+  {nome:'Samuel',tel:'(11) 94074-9946',wa:'5511940749946',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:['tarde'],ter:['tarde'],qua:['tarde'],qui:['tarde'],sex:['tarde'],sab:['tarde']}},
+  {nome:'Roberto',tel:'(69) 99300-4211',wa:'5569993004211',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['manha'],seg:[],ter:[],qua:[],qui:['noite'],sex:[],sab:[]}},
+  {nome:'Marcos',tel:'(69) 99984-1869',wa:'5569999841869',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:[],qua:[],qui:['noite'],sex:[],sab:['tarde']}},
+  {nome:'Sidnei',tel:'(69) 99286-9852',wa:'5569992869852',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:['noite'],qua:['noite'],qui:[],sex:['noite'],sab:['noite']}},
+  {nome:'Matheus',tel:'(69) 99340-0592',wa:'5569993400592',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:['noite'],sab:['noite']}},
+  {nome:'Gabriel Paulino',tel:'(69) 98403-5050',wa:'5569984035050',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['manha','noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
+  {nome:'Natan',tel:'(27) 99614-4129',wa:'5527996144129',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
+  {nome:'Rafael',tel:'(69) 99310-3204',wa:'5569993103204',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Luan Maikon',tel:'(66) 99200-3351',wa:'5566992003351',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['manha','noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
+  {nome:'Judialien',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Diego Barbosa',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:['noite'],qua:['noite'],qui:[],sex:[],sab:[]}},
+  {nome:'Pedro Jalles',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Diego Gervazio',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'David',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Ronaldo',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Guilherme',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Andrey',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'M. Augusto',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Helio',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}}
 ];
 
 let BAGS=['Bag 1','Bag 2','Bag 3'];
@@ -510,6 +580,11 @@ let USERS=[
   {id:'financeiro',role:'Financeiro',nome:'Financeiro',email:'fin@maisdelivery.com',senha:'fin2025',cor:'#4AE870',perms:{turnos:true,equipe:true,financeiro:true,checklists:true,config:false},logs:[]},
   {id:'suporte',role:'Suporte',nome:'Suporte',email:'sup@maisdelivery.com',senha:'sup2025',cor:'#5EE8A0',perms:{turnos:true,equipe:true,financeiro:false,checklists:true,config:false},logs:[]}
 ];
+
+const CENTRAL_WA='5569992640823';
+const SESSION_KEY='turnos_session';
+// session = {kind:'gerencial', userId:'gerente'} ou {kind:'motoboy', nome:'Wesley'}
+let SESSION=null;
 
 let SCH={};
 function turnosOfDay(d){return Object.entries(CFG[d]).filter(function(e){return e[1].ativo}).map(function(e){return Object.assign({id:e[0]},e[1])})}
@@ -580,10 +655,10 @@ const MAX_BK=10;
 
 function saveBackup(motivo){
   try{
-    const bks=JSON.parse(localStorage.getItem(BK_KEY)||'[]');
+    const bks=JSON.parse(safeGet(BK_KEY)||'[]');
     bks.unshift({ts:Date.now(),motivo:motivo||'Alteração',sch:JSON.stringify(SCH)});
     if(bks.length>MAX_BK)bks.length=MAX_BK;
-    localStorage.setItem(BK_KEY,JSON.stringify(bks));
+    safeSet(BK_KEY,JSON.stringify(bks));
     flashBackupDot();
     if(typeof autoSync==='function')autoSync();
   }catch(e){console.warn('Backup failed:',e)}
@@ -596,7 +671,7 @@ function flashBackupDot(){
 }
 
 function loadBackups(){
-  try{return JSON.parse(localStorage.getItem(BK_KEY)||'[]')}catch(e){return[]}
+  try{return JSON.parse(safeGet(BK_KEY)||'[]')}catch(e){return[]}
 }
 
 function restoreBackup(idx){
@@ -726,9 +801,26 @@ function getEventsNext7(){
   }).sort(function(a,b){return a.data.localeCompare(b.data)});
 }
 
-function buildWaMsg(nome,turnolbl,dayKey){
-  const dia=DAY_FULL[dayKey]||dayKey;
-  const msg='Olá '+nome+'! Você está no turno '+turnolbl+' de '+dia+'. Pode confirmar sua presença?';
+// Rótulo relativo do dia: hoje, amanhã, ou nome do dia
+function diaRelativoLabel(dayKey){
+  const idx=DAY_ORDER.indexOf(dayKey);
+  if(idx===0)return'hoje';
+  if(idx===1)return'amanhã';
+  return DAY_FULL[dayKey];
+}
+
+// Mensagem da CENTRAL para o motoboy (botão WA no turno, lado do gerente)
+function buildWaMsg(nome,turnolbl,dayKey,iniH,fimH){
+  const diaRel=diaRelativoLabel(dayKey);
+  const horario=(iniH&&fimH)?(' '+iniH+' até '+fimH):'';
+  const msg='Opa '+nome+', posso confirmar sua presença nas entregas '+diaRel+horario+'?';
+  return encodeURIComponent(msg);
+}
+
+// Mensagem do MOTOBOY para a central (ao confirmar o próprio turno no app)
+function buildWaMsgMotoboyConfirma(dayKey,iniH,fimH){
+  const diaRel=diaRelativoLabel(dayKey);
+  const msg='Opa, confirmei meu horário pra '+diaRel+' '+iniH+' até '+fimH;
   return encodeURIComponent(msg);
 }
 
@@ -783,6 +875,7 @@ function goDay(idx,animate){
 }
 
 function renderSlide(day){
+  if(SESSION&&SESSION.kind==='motoboy'){renderSlideMotoboy(day);return;}
   const slide=document.getElementById('slide-'+day);
   if(!slide)return;
   const isToday=day===todayKey;
@@ -812,7 +905,7 @@ function renderSlide(day){
       const eq=EQUIPE.find(function(x){return x.nome===mb.nome});
       const bagHtml=(eq&&eq.bag)?'<div class="mb-bag" onclick="openBag(\''+mb.nome.replace(/'/g,"\\'")+'\')">Bag: '+eq.bag+'</div>':'';
       const waNum=(eq&&eq.wa)?eq.wa:'';
-      const waMsg=buildWaMsg(mb.nome,t.lbl,day);
+      const waMsg=buildWaMsg(mb.nome,t.lbl,day,mb.ini,mb.fim);
       const waHref=waNum?('https://wa.me/'+waNum+'?text='+waMsg):'#';
       const waBtn=waNum?('<a class="wa-row-btn" href="'+waHref+'" target="_blank" title="WhatsApp '+mb.nome+'"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a9.96 9.96 0 0 1-4.862-1.262L2 22l1.296-4.946A9.96 9.96 0 0 1 2 12 10 10 0 0 1 12 2"/></svg></a>'):'';
       const rowCls=rowStatusClass(mb.status);
@@ -939,7 +1032,8 @@ function abrirContingencia(day,tid,lbl){
     sugs.forEach(function(s){
       const e=s.eq;
       const motivoCls=s.prioridade===1?'sug-motivo-rotina':'sug-motivo-disp';
-      const waMsg=buildWaMsg(e.nome,lbl,day);
+      const tcfg=CFG[day][tid];
+      const waMsg=buildWaMsg(e.nome,lbl,day,tcfg.ini,tcfg.fim);
       const waBtn=e.wa?('<a class="cont-wa" href="https://wa.me/'+e.wa+'?text='+waMsg+'" target="_blank">Chamar</a>'):'<span class="cont-wa cont-wa-off">Sem WA</span>';
       html+='<div class="cont-item"><div class="cont-left"><div class="sug-av">'+ini(e.nome)+'</div><div><div class="cont-name">'+e.nome+'</div><div class="sug-motivo '+motivoCls+'">'+s.motivo+'</div></div></div><div class="cont-actions">'+waBtn+'<button class="cont-add" onclick="addSug(\''+day+'\',\''+tid+'\',\''+e.nome.replace(/'/g,"\\'")+'\');abrirContingencia(\''+day+'\',\''+tid+'\',\''+lbl+'\')">+ Escalar</button></div></div>';
     });
@@ -1074,7 +1168,7 @@ function renderMbEq(){
       return '<div class="disp-day-row"><span class="disp-day-lbl">'+DAY_LBL[d]+'</span><div class="disp-turn-opts">'+opts+'</div></div>';
     }).join('');
     const bagInfo=e.bag?('<div class="mb-body-sec"><div class="field-label">Bag atual</div><div style="font-size:13px;color:var(--s-res);margin-top:4px">'+e.bag+' desde '+fmtTs(e.bagTs)+'</div></div>'):'';
-    return '<div class="mb-card"><div class="mb-card-head" onclick="toggleMbCard('+i+')"><div class="mb-card-av">'+ini(e.nome)+'</div><div class="mb-card-info"><div class="mb-card-name">'+e.nome+'</div><div class="mb-card-sub">'+(e.tel||'Sem numero')+'</div></div><span class="mb-freq">'+mbFreq(e.nome)+'x</span><span class="mb-card-arrow" id="mbarr-'+i+'">&rsaquo;</span></div><div class="mb-card-body" id="mbbody-'+i+'"><div class="mb-body-sec"><div class="field-label">Nome</div><input class="field-val" value="'+e.nome+'" onchange="EQUIPE['+realIdx+'].nome=this.value;renderMbEq()"><div class="field-label" style="margin-top:10px">Telefone</div><input class="field-val" value="'+(e.tel||'')+'" placeholder="(69) 9xxxx-xxxx" onchange="EQUIPE['+realIdx+'].tel=this.value">'+waBtn+'</div><div class="mb-body-sec"><div class="field-label">Chave Pix</div><div class="pix-row"><input class="pix-val" value="'+(e.pix||'')+'" placeholder="Chave Pix" id="pix-'+i+'" onchange="EQUIPE['+realIdx+'].pix=this.value"><button class="copy-btn" onclick="copyPix('+i+')">Copiar</button></div></div><div class="mb-body-sec"><div class="field-label">Disponibilidade habitual</div><div class="disp-grid">'+dispGrid+'</div></div><div class="mb-body-sec"><div class="field-label">Observacoes</div><textarea class="obs-area" onchange="EQUIPE['+realIdx+'].obs=this.value">'+(e.obs||'')+'</textarea></div>'+bagInfo+'</div></div>';
+    return '<div class="mb-card"><div class="mb-card-head" onclick="toggleMbCard('+i+')"><div class="mb-card-av">'+ini(e.nome)+'</div><div class="mb-card-info"><div class="mb-card-name">'+e.nome+'</div><div class="mb-card-sub">'+(e.tel||'Sem numero')+'</div></div><span class="mb-freq">'+mbFreq(e.nome)+'x</span><span class="mb-card-arrow" id="mbarr-'+i+'">&rsaquo;</span></div><div class="mb-card-body" id="mbbody-'+i+'"><div class="mb-body-sec"><div class="field-label">Nome</div><input class="field-val" value="'+e.nome+'" onchange="EQUIPE['+realIdx+'].nome=this.value;renderMbEq()"><div class="field-label" style="margin-top:10px">Telefone</div><input class="field-val" value="'+(e.tel||'')+'" placeholder="(69) 9xxxx-xxxx" onchange="EQUIPE['+realIdx+'].tel=this.value">'+waBtn+'</div><div class="mb-body-sec"><div class="field-label">Chave Pix</div><div class="pix-row"><input class="pix-val" value="'+(e.pix||'')+'" placeholder="Chave Pix" id="pix-'+i+'" onchange="EQUIPE['+realIdx+'].pix=this.value"><button class="copy-btn" onclick="copyPix('+i+')">Copiar</button></div></div><div class="mb-body-sec"><div class="field-label">Senha de acesso (app do motoboy)</div><div class="pix-row"><input class="pix-val" type="text" value="'+(e.senha||'')+'" placeholder="Senha" id="senha-'+i+'" onchange="EQUIPE['+realIdx+'].senha=this.value"><button class="copy-btn" onclick="document.getElementById(\'senha-'+i+'\').type=document.getElementById(\'senha-'+i+'\').type===\'password\'?\'text\':\'password\'">Ver</button></div></div><div class="mb-body-sec"><div class="field-label">Disponibilidade habitual</div><div class="disp-grid">'+dispGrid+'</div></div><div class="mb-body-sec"><div class="field-label">Observacoes</div><textarea class="obs-area" onchange="EQUIPE['+realIdx+'].obs=this.value">'+(e.obs||'')+'</textarea></div>'+bagInfo+'</div></div>';
   }).join('');
 }
 
@@ -1189,6 +1283,191 @@ function schedMidnight(){
   },mn-now);
 }
 
+// ═══════════════════════════════════════════════════════
+// LOGIN, SESSÃO E VISÃO DO MOTOBOY
+// ═══════════════════════════════════════════════════════
+function switchLoginTab(tab){
+  document.getElementById('ltab-gerencial').classList.toggle('active',tab==='gerencial');
+  document.getElementById('ltab-motoboy').classList.toggle('active',tab==='motoboy');
+  document.getElementById('login-form-gerencial').style.display=tab==='gerencial'?'flex':'none';
+  document.getElementById('login-form-motoboy').style.display=tab==='motoboy'?'flex':'none';
+  document.getElementById('lg-error').textContent='';
+  document.getElementById('lm-error').textContent='';
+}
+
+function populateMotoboySelect(){
+  const sel=document.getElementById('lm-nome');
+  if(!sel)return;
+  sel.innerHTML=EQUIPE.map(function(e){return '<option value="'+e.nome+'">'+e.nome+'</option>'}).join('');
+  const last=safeGet('turnos_last_motoboy');
+  if(last)sel.value=last;
+}
+
+function doLoginGerencial(e){
+  e.preventDefault();
+  try{
+    const email=document.getElementById('lg-email').value.trim().toLowerCase();
+    const senha=document.getElementById('lg-senha').value;
+    const u=USERS.find(function(x){return x.email.toLowerCase()===email&&x.senha===senha});
+    if(!u){document.getElementById('lg-error').textContent='E-mail ou senha incorretos';return false;}
+    u.logs.push({ts:Date.now(),acao:'Login'});
+    SESSION={kind:'gerencial',userId:u.id};
+    safeSet(SESSION_KEY,JSON.stringify(SESSION));
+    startApp();
+  }catch(err){
+    console.warn('Erro no login:',err);
+    document.getElementById('lg-error').textContent='Erro ao entrar. Tente novamente.';
+  }
+  return false;
+}
+
+function doLoginMotoboy(e){
+  e.preventDefault();
+  try{
+    const nome=document.getElementById('lm-nome').value;
+    const senha=document.getElementById('lm-senha').value;
+    const eq=EQUIPE.find(function(x){return x.nome===nome});
+    if(!eq||eq.senha!==senha){document.getElementById('lm-error').textContent='Senha incorreta';return false;}
+    SESSION={kind:'motoboy',nome:nome};
+    safeSet(SESSION_KEY,JSON.stringify(SESSION));
+    safeSet('turnos_last_motoboy',nome);
+    startApp();
+  }catch(err){
+    console.warn('Erro no login:',err);
+    document.getElementById('lm-error').textContent='Erro ao entrar. Tente novamente.';
+  }
+  return false;
+}
+
+function doLogout(){
+  SESSION=null;
+  safeRemove(SESSION_KEY);
+  document.getElementById('app-root').style.display='none';
+  document.getElementById('login-gate').style.display='flex';
+  document.getElementById('lg-senha').value='';
+  document.getElementById('lm-senha').value='';
+  document.getElementById('lg-error').textContent='';
+  document.getElementById('lm-error').textContent='';
+}
+
+function applySessionUI(){
+  const isMotoboy=SESSION.kind==='motoboy';
+  document.querySelectorAll('.bnav-tab').forEach(function(b){
+    const show=!isMotoboy||b.dataset.panel==='turnos';
+    b.style.display=show?'':'none';
+  });
+  const roleLabel=document.getElementById('topbar-role-label');
+  if(isMotoboy){
+    roleLabel.textContent='Motoboy — '+SESSION.nome;
+    document.getElementById('btn-config').style.display='none';
+    document.getElementById('btn-backups').style.display='none';
+  }else{
+    const u=USERS.find(function(x){return x.id===SESSION.userId});
+    roleLabel.textContent=u?u.role:'Gerente';
+    document.getElementById('btn-config').style.display=(u&&u.perms.config)?'':'none';
+    document.getElementById('btn-backups').style.display='';
+  }
+  setPanel('turnos',document.querySelector('[data-panel="turnos"]'));
+}
+
+function startApp(){
+  document.getElementById('login-gate').style.display='none';
+  document.getElementById('app-root').style.display='block';
+  applySessionUI();
+  buildCarousel();
+}
+
+function tryAutoLogin(){
+  try{
+    const saved=JSON.parse(safeGet(SESSION_KEY)||'null');
+    if(!saved)return false;
+    if(saved.kind==='gerencial'){
+      if(!USERS.some(function(x){return x.id===saved.userId}))return false;
+    }else if(saved.kind==='motoboy'){
+      if(!EQUIPE.some(function(x){return x.nome===saved.nome}))return false;
+    }else return false;
+    SESSION=saved;
+    return true;
+  }catch(e){return false;}
+}
+
+// Mensagem do motoboy avisando indisponibilidade pra central
+function buildWaMsgMotoboyIndisponivel(dayKey,iniH,fimH){
+  const diaRel=diaRelativoLabel(dayKey);
+  const msg='Opa, infelizmente não vou poder estar presente '+diaRel+' '+iniH+' até '+fimH+'. Por favor desconsiderem minha escala nesse turno.';
+  return encodeURIComponent(msg);
+}
+
+// Render simplificado para o motoboy: só os próprios turnos + vagas pra reservar
+function renderSlideMotoboy(day){
+  const slide=document.getElementById('slide-'+day);
+  if(!slide)return;
+  const nome=SESSION.nome;
+  let html='';
+  const isToday=day===DAY_ORDER[0];
+  if(isToday)html+='<div style="font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px">'+new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'})+'</div>';
+
+  let any=false;
+  turnosOfDay(day).forEach(function(t){
+    if(!SCH[day][t.id])return;
+    const td=SCH[day][t.id];
+    const idx=td.mbs.findIndex(function(m){return m.nome===nome});
+    const vagas=td.vagas||0;
+    if(idx===-1&&vagas<=0)return;
+    any=true;
+    const conf=td.mbs.filter(function(m){return ['Confirmado','Reserva'].indexOf(m.status)>-1}).length;
+    const tStatus=turnoStatus(conf,t.min);
+
+    html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="status-strip '+tStatus+'"></div><div class="turno-left"><span class="turno-icon">'+t.icon+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+'</div></div></div></div>';
+
+    if(idx>-1){
+      const mb=td.mbs[idx];
+      const rowCls=rowStatusClass(mb.status);
+      html+='<div class="mb-row '+rowCls+'"><div class="mb-av">'+ini(nome)+'</div><div class="mb-info"><div class="mb-name">'+mb.ini+' - '+mb.fim+'</div></div><div class="mb-right"><span class="status-pill '+spCls(mb.status)+'">'+mb.status+'</span></div></div>';
+      html+='<div class="mb-action-row">';
+      if(mb.status!=='Confirmado')html+='<button class="mb-act-btn mb-act-confirm" onclick="motoboyConfirmar(\''+day+'\',\''+t.id+'\','+idx+')">Confirmar presença</button>';
+      if(mb.status!=='Indisponível')html+='<button class="mb-act-btn mb-act-indisp" onclick="motoboyIndisponivel(\''+day+'\',\''+t.id+'\','+idx+')">Marcar indisponível</button>';
+      html+='</div>';
+    }else if(vagas>0){
+      html+='<div class="vaga-wrap"><div class="vaga-row"><div class="vaga-av">'+vagas+'</div><span class="vaga-label">'+vagas+' vaga'+(vagas>1?'s':'')+' disponível</span></div></div>';
+      html+='<div class="mb-action-row"><button class="mb-act-btn mb-act-reservar" onclick="motoboyReservar(\''+day+'\',\''+t.id+'\')">Reservar este turno</button></div>';
+    }
+    html+='</div>';
+  });
+
+  if(!any)html+='<div class="ev-empty">Você não está escalado nem há vagas neste dia</div>';
+  slide.innerHTML=html;
+}
+
+function motoboyConfirmar(day,tid,idx){
+  const mb=SCH[day][tid].mbs[idx];
+  mb.status='Confirmado';
+  saveBackup(mb.nome+' confirmou presença pelo app');
+  const msg=buildWaMsgMotoboyConfirma(day,mb.ini,mb.fim);
+  window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');
+  renderSlide(day);buildCarousel();
+}
+
+function motoboyIndisponivel(day,tid,idx){
+  const mb=SCH[day][tid].mbs[idx];
+  mb.status='Indisponível';
+  saveBackup(mb.nome+' marcou indisponível pelo app');
+  const msg=buildWaMsgMotoboyIndisponivel(day,mb.ini,mb.fim);
+  window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');
+  renderSlide(day);buildCarousel();
+}
+
+function motoboyReservar(day,tid){
+  const t=CFG[day][tid];
+  const nome=SESSION.nome;
+  SCH[day][tid].mbs.push({nome:nome,ini:t.ini,fim:t.fim,status:'Confirmado'});
+  if((SCH[day][tid].vagas||0)>0)SCH[day][tid].vagas--;
+  saveBackup(nome+' reservou turno pelo app');
+  const msg=buildWaMsgMotoboyConfirma(day,t.ini,t.fim);
+  window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');
+  renderSlide(day);buildCarousel();
+}
+
 function setPanel(id,btn){
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
   document.querySelectorAll('.bnav-tab').forEach(function(b){b.classList.remove('active')});
@@ -1229,7 +1508,7 @@ const TOKEN_KEY='turnos_gh_token';
 function getToken(){
   const fromInput=document.getElementById('gist-token');
   if(fromInput&&fromInput.value.trim())return fromInput.value.trim();
-  return localStorage.getItem(TOKEN_KEY)||'';
+  return safeGet(TOKEN_KEY)||'';
 }
 
 function gistStatus(msg,erro){
@@ -1258,7 +1537,7 @@ function buildSyncPayload(){
 function syncToGist(){
   const token=getToken();
   if(!token){gistStatus('Cole o token primeiro',true);return;}
-  localStorage.setItem(TOKEN_KEY,token);
+  safeSet(TOKEN_KEY,token);
   gistStatus('Salvando na nuvem...');
   const body={files:{}};
   body.files[GIST_FILE]={content:JSON.stringify(buildSyncPayload())};
@@ -1279,7 +1558,7 @@ function syncToGist(){
 function loadFromGist(){
   const token=getToken();
   if(!token){gistStatus('Cole o token primeiro',true);return;}
-  localStorage.setItem(TOKEN_KEY,token);
+  safeSet(TOKEN_KEY,token);
   gistStatus('Carregando da nuvem...');
   fetch('https://api.github.com/gists/'+GIST_ID,{
     headers:{'Authorization':'token '+token,'Accept':'application/vnd.github+json'}
@@ -1313,7 +1592,7 @@ function loadFromGist(){
 // auto-sync silencioso após alterações (se houver token salvo)
 let syncTimer=null;
 function autoSync(){
-  if(!localStorage.getItem(TOKEN_KEY))return;
+  if(!safeGet(TOKEN_KEY))return;
   if(syncTimer)clearTimeout(syncTimer);
   syncTimer=setTimeout(syncToGist,3000);
 }
@@ -1321,12 +1600,18 @@ function autoSync(){
 // preenche token salvo ao abrir config
 function fillSavedToken(){
   const inp=document.getElementById('gist-token');
-  const saved=localStorage.getItem(TOKEN_KEY);
+  const saved=safeGet(TOKEN_KEY);
   if(inp&&saved)inp.value=saved;
 }
 
 initSch();
 snapshotHistorico();
+populateMotoboySelect();
+if(tryAutoLogin()){
+  document.getElementById('login-gate').style.display='none';
+  document.getElementById('app-root').style.display='block';
+  applySessionUI();
+}
 buildCarousel();
 updateBanner();
 renderCk();
