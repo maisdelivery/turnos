@@ -1557,12 +1557,11 @@ function syncToGist(){
 
 function loadFromGist(){
   const token=getToken();
-  if(!token){gistStatus('Cole o token primeiro',true);return;}
-  safeSet(TOKEN_KEY,token);
+  if(token)safeSet(TOKEN_KEY,token);
   gistStatus('Carregando da nuvem...');
-  fetch('https://api.github.com/gists/'+GIST_ID,{
-    headers:{'Authorization':'token '+token,'Accept':'application/vnd.github+json'}
-  }).then(function(r){
+  const headers={'Accept':'application/vnd.github+json'};
+  if(token)headers['Authorization']='token '+token;
+  fetch('https://api.github.com/gists/'+GIST_ID,{headers:headers}).then(function(r){
     if(!r.ok)throw new Error('HTTP '+r.status);
     return r.json();
   }).then(function(data){
@@ -1587,6 +1586,41 @@ function loadFromGist(){
   }).catch(function(e){
     gistStatus('Erro ao carregar: '+e.message,true);
   });
+}
+
+// Busca automática ao ABRIR o app — leitura de Gist não exige token, só a escrita exige.
+// Garante que todo dispositivo (gerencial ou motoboy) sempre veja a versão mais recente
+// salva na nuvem, sem precisar tocar em nada.
+function bootSync(){
+  fetch('https://api.github.com/gists/'+GIST_ID,{headers:{'Accept':'application/vnd.github+json'}})
+    .then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      return r.json();
+    })
+    .then(function(data){
+      const file=data.files&&data.files[GIST_FILE];
+      if(!file||!file.content)return; // ainda nao foi salvo nada na nuvem, mantem padrao
+      let p;
+      try{p=JSON.parse(file.content);}catch(e){return;}
+      if(p.SCH)SCH=p.SCH;
+      if(p.CFG)CFG=p.CFG;
+      if(p.BAGS)BAGS=p.BAGS;
+      if(p.EVENTOS_LOCAIS)EVENTOS_LOCAIS=p.EVENTOS_LOCAIS;
+      if(p.CKS)CKS=p.CKS;
+      if(p.HIST&&Object.keys(p.HIST).length)HIST=p.HIST;else snapshotHistorico();
+      if(p.EQUIPE){
+        p.EQUIPE.forEach(function(es){
+          const e=EQUIPE.find(function(x){return x.nome===es.nome});
+          if(e){e.tel=es.tel;e.wa=es.wa;e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;}
+        });
+      }
+      buildCarousel();
+      updateBanner();
+      renderCk();
+    })
+    .catch(function(e){
+      console.warn('Sincronizacao automatica ao abrir falhou (normal se ainda nao salvou nada):',e.message);
+    });
 }
 
 // auto-sync silencioso após alterações (se houver token salvo)
@@ -1617,6 +1651,7 @@ updateBanner();
 renderCk();
 initSwipe();
 schedMidnight();
+bootSync();
 </script>
 </body>
 </html>
