@@ -447,12 +447,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="sheet-sub">Turnos, mínimos e sincronização</div>
 
   <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-md);padding:13px;margin-bottom:16px">
-    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Sincronização na nuvem (GitHub Gist)</div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Cole seu token do GitHub para salvar os dados na nuvem. O token fica só neste aparelho, nunca no código.</div>
-    <input class="sh-input" id="gist-token" type="password" placeholder="GitHub token (ghp_...)" style="margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--s-conf);flex-shrink:0"></div>
+      <div style="font-size:12px;font-weight:700;color:var(--text)">Sincronização automática ativa</div>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Todas as alterações são salvas na nuvem automaticamente. Qualquer dispositivo que abrir o app recebe a versão mais recente.</div>
     <div style="display:flex;gap:8px">
-      <button class="sh-btn sh-btn-s" style="flex:1;margin:0;padding:9px" onclick="syncToGist()">Salvar na nuvem</button>
-      <button class="sh-btn sh-btn-s" style="flex:1;margin:0;padding:9px" onclick="loadFromGist()">Carregar da nuvem</button>
+      <button class="sh-btn sh-btn-s" style="flex:1;margin:0;padding:9px" onclick="syncToGist()">Forçar salvamento</button>
+      <button class="sh-btn sh-btn-s" style="flex:1;margin:0;padding:9px" onclick="loadFromGist()">Recarregar da nuvem</button>
     </div>
     <div id="gist-status" style="font-size:11px;color:var(--text2);text-align:center;margin-top:8px;min-height:14px"></div>
   </div>
@@ -1303,6 +1305,17 @@ function populateMotoboySelect(){
   if(last)sel.value=last;
 }
 
+// Pede ao navegador pra oferecer salvar a senha (funciona em Chrome/Edge/Android;
+// Safari/iPhone não suporta essa API e depende só da detecção automática do formulário)
+function ofereceSalvarSenha(id,senha,nomeExibido){
+  try{
+    if('PasswordCredential' in window){
+      const cred=new window.PasswordCredential({id:id,password:senha,name:nomeExibido});
+      navigator.credentials.store(cred).catch(function(){});
+    }
+  }catch(e){/* navegador nao suporta, sem problema */}
+}
+
 function doLoginGerencial(e){
   e.preventDefault();
   try{
@@ -1313,6 +1326,7 @@ function doLoginGerencial(e){
     u.logs.push({ts:Date.now(),acao:'Login'});
     SESSION={kind:'gerencial',userId:u.id};
     safeSet(SESSION_KEY,JSON.stringify(SESSION));
+    ofereceSalvarSenha(email,senha,u.role);
     startApp();
   }catch(err){
     console.warn('Erro no login:',err);
@@ -1331,6 +1345,7 @@ function doLoginMotoboy(e){
     SESSION={kind:'motoboy',nome:nome};
     safeSet(SESSION_KEY,JSON.stringify(SESSION));
     safeSet('turnos_last_motoboy',nome);
+    ofereceSalvarSenha(nome,senha,nome);
     startApp();
   }catch(err){
     console.warn('Erro no login:',err);
@@ -1484,7 +1499,7 @@ function openSheet(id){
   document.getElementById(id).classList.add('open');
   document.getElementById('overlay').classList.add('open');
   if(id==='bk-sheet')renderBkList();
-  if(id==='cfg-sheet'){renderCfg();if(typeof fillSavedToken==='function')fillSavedToken();}
+  if(id==='cfg-sheet'){renderCfg();}
 }
 function closeAll(){
   ALL_SHEETS.forEach(function(s){document.getElementById(s).classList.remove('open')});
@@ -1497,145 +1512,106 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 // ═══════════════════════════════════════════════════════
-// GIST SYNC — sincronização na nuvem
-// O token fica em localStorage neste aparelho, nunca no código.
-// Gist ID fixo do projeto. Dados sensíveis (pix/senha) NAO sao enviados.
+// ═══════════════════════════════════════════════════════
+// SYNC VIA RELAY — nenhum dispositivo precisa de token
+// O relay (Google Apps Script) guarda o token com segurança
+// e faz o PATCH no GitHub por nós.
 // ═══════════════════════════════════════════════════════
 const GIST_ID='c7a2a48450ead836e5d167ec6d3c50fa';
 const GIST_FILE='turnos_data.json';
-const TOKEN_KEY='turnos_gh_token';
-
-function getToken(){
-  const fromInput=document.getElementById('gist-token');
-  if(fromInput&&fromInput.value.trim())return fromInput.value.trim();
-  return safeGet(TOKEN_KEY)||'';
-}
+const RELAY_URL='https://script.google.com/macros/s/AKfycbw_Q7feLifg56AuxK9GADAmgi6nS1rMZA0G7AivavfCP4y61FfKlp-gGinJW9X1qah5/exec';
+const RELAY_KEY='maisdelivery2025';
 
 function gistStatus(msg,erro){
   const el=document.getElementById('gist-status');
-  if(el){el.textContent=msg;el.style.color=erro?'var(--s-ind)':'var(--text2)';}
+  if(el){el.textContent=msg;el.style.color=erro?'var(--s-ind)':'var(--s-conf)';}
 }
 
-// Monta o pacote de dados a sincronizar (sem pix/senha por segurança)
+// Monta o pacote de dados (sem pix/senha — ficam só no dispositivo local)
 function buildSyncPayload(){
   const equipeSafe=EQUIPE.map(function(e){
     return {nome:e.nome,tel:e.tel,wa:e.wa,obs:e.obs,bag:e.bag,bagTs:e.bagTs,disp:e.disp};
   });
-  return {
-    versao:1,
-    salvoEm:Date.now(),
-    SCH:SCH,
-    CFG:CFG,
-    EQUIPE:equipeSafe,
-    BAGS:BAGS,
-    EVENTOS_LOCAIS:EVENTOS_LOCAIS,
-    CKS:CKS,
-    HIST:HIST
-  };
+  return {versao:1,salvoEm:Date.now(),SCH:SCH,CFG:CFG,EQUIPE:equipeSafe,BAGS:BAGS,EVENTOS_LOCAIS:EVENTOS_LOCAIS,CKS:CKS,HIST:HIST};
 }
 
+// Aplica dados recebidos da nuvem no estado local
+function applyCloudData(p){
+  if(p.SCH)SCH=p.SCH;
+  if(p.CFG)CFG=p.CFG;
+  if(p.BAGS)BAGS=p.BAGS;
+  if(p.EVENTOS_LOCAIS)EVENTOS_LOCAIS=p.EVENTOS_LOCAIS;
+  if(p.CKS)CKS=p.CKS;
+  if(p.HIST&&Object.keys(p.HIST).length)HIST=p.HIST;
+  if(p.EQUIPE){
+    p.EQUIPE.forEach(function(es){
+      const e=EQUIPE.find(function(x){return x.nome===es.nome});
+      if(e){e.tel=es.tel;e.wa=es.wa;e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;}
+    });
+  }
+}
+
+// SALVAR — via relay (sem token no app)
 function syncToGist(){
-  const token=getToken();
-  if(!token){gistStatus('Cole o token primeiro',true);return;}
-  safeSet(TOKEN_KEY,token);
   gistStatus('Salvando na nuvem...');
-  const body={files:{}};
-  body.files[GIST_FILE]={content:JSON.stringify(buildSyncPayload())};
-  fetch('https://api.github.com/gists/'+GIST_ID,{
-    method:'PATCH',
-    headers:{'Authorization':'token '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json'},
-    body:JSON.stringify(body)
-  }).then(function(r){
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    return r.json();
-  }).then(function(){
-    gistStatus('Salvo na nuvem '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+  fetch(RELAY_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({appKey:RELAY_KEY,data:buildSyncPayload()})
+  }).then(function(r){return r.json();})
+  .then(function(res){
+    if(res.ok){
+      gistStatus('Salvo '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+    }else{
+      gistStatus('Erro: '+res.error,true);
+    }
   }).catch(function(e){
-    gistStatus('Erro ao salvar: '+e.message,true);
+    gistStatus('Falha na conexão',true);
   });
 }
 
+// CARREGAR — leitura direta do Gist (sem token, é público)
 function loadFromGist(){
-  const token=getToken();
-  if(token)safeSet(TOKEN_KEY,token);
   gistStatus('Carregando da nuvem...');
-  const headers={'Accept':'application/vnd.github+json'};
-  if(token)headers['Authorization']='token '+token;
-  fetch('https://api.github.com/gists/'+GIST_ID,{headers:headers}).then(function(r){
+  fetch('https://api.github.com/gists/'+GIST_ID,{headers:{'Accept':'application/vnd.github+json'}})
+  .then(function(r){
     if(!r.ok)throw new Error('HTTP '+r.status);
     return r.json();
   }).then(function(data){
     const file=data.files&&data.files[GIST_FILE];
-    if(!file||!file.content)throw new Error('Sem dados salvos ainda');
+    if(!file||!file.content)throw new Error('Nenhum dado salvo ainda');
     const p=JSON.parse(file.content);
-    if(p.SCH)SCH=p.SCH;
-    if(p.CFG)CFG=p.CFG;
-    if(p.BAGS)BAGS=p.BAGS;
-    if(p.EVENTOS_LOCAIS)EVENTOS_LOCAIS=p.EVENTOS_LOCAIS;
-    if(p.CKS)CKS=p.CKS;
-    if(p.HIST)HIST=p.HIST;
-    // mescla equipe preservando pix/senha locais
-    if(p.EQUIPE){
-      p.EQUIPE.forEach(function(es){
-        const e=EQUIPE.find(function(x){return x.nome===es.nome});
-        if(e){e.tel=es.tel;e.wa=es.wa;e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;}
-      });
-    }
-    gistStatus('Carregado da nuvem');
+    applyCloudData(p);
+    gistStatus('Atualizado da nuvem');
     closeAll();buildCarousel();renderCk();
   }).catch(function(e){
     gistStatus('Erro ao carregar: '+e.message,true);
   });
 }
 
-// Busca automática ao ABRIR o app — leitura de Gist não exige token, só a escrita exige.
-// Garante que todo dispositivo (gerencial ou motoboy) sempre veja a versão mais recente
-// salva na nuvem, sem precisar tocar em nada.
+// ABERTURA — busca automática ao abrir o app em qualquer dispositivo
 function bootSync(){
   fetch('https://api.github.com/gists/'+GIST_ID,{headers:{'Accept':'application/vnd.github+json'}})
-    .then(function(r){
-      if(!r.ok)throw new Error('HTTP '+r.status);
-      return r.json();
-    })
-    .then(function(data){
-      const file=data.files&&data.files[GIST_FILE];
-      if(!file||!file.content)return; // ainda nao foi salvo nada na nuvem, mantem padrao
-      let p;
-      try{p=JSON.parse(file.content);}catch(e){return;}
-      if(p.SCH)SCH=p.SCH;
-      if(p.CFG)CFG=p.CFG;
-      if(p.BAGS)BAGS=p.BAGS;
-      if(p.EVENTOS_LOCAIS)EVENTOS_LOCAIS=p.EVENTOS_LOCAIS;
-      if(p.CKS)CKS=p.CKS;
-      if(p.HIST&&Object.keys(p.HIST).length)HIST=p.HIST;else snapshotHistorico();
-      if(p.EQUIPE){
-        p.EQUIPE.forEach(function(es){
-          const e=EQUIPE.find(function(x){return x.nome===es.nome});
-          if(e){e.tel=es.tel;e.wa=es.wa;e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;}
-        });
-      }
-      buildCarousel();
-      updateBanner();
-      renderCk();
-    })
-    .catch(function(e){
-      console.warn('Sincronizacao automatica ao abrir falhou (normal se ainda nao salvou nada):',e.message);
-    });
+  .then(function(r){
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(data){
+    const file=data.files&&data.files[GIST_FILE];
+    if(!file||!file.content)return;
+    let p;try{p=JSON.parse(file.content);}catch(e){return;}
+    applyCloudData(p);
+    if(!p.HIST||!Object.keys(p.HIST).length)snapshotHistorico();
+    buildCarousel();updateBanner();renderCk();
+  }).catch(function(e){
+    console.warn('Boot sync falhou:',e.message);
+  });
 }
 
-// auto-sync silencioso após alterações (se houver token salvo)
+// AUTO-SAVE — 3 segundos após cada alteração
 let syncTimer=null;
 function autoSync(){
-  if(!safeGet(TOKEN_KEY))return;
   if(syncTimer)clearTimeout(syncTimer);
   syncTimer=setTimeout(syncToGist,3000);
-}
-
-// preenche token salvo ao abrir config
-function fillSavedToken(){
-  const inp=document.getElementById('gist-token');
-  const saved=safeGet(TOKEN_KEY);
-  if(inp&&saved)inp.value=saved;
 }
 
 initSch();
