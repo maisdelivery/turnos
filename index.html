@@ -1556,7 +1556,8 @@ function syncToGist(){
   gistStatus('Salvando na nuvem...');
   fetch(RELAY_URL,{
     method:'POST',
-    headers:{'Content-Type':'application/json'},
+    redirect:'follow',
+    headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({appKey:RELAY_KEY,data:buildSyncPayload()})
   }).then(function(r){return r.json();})
   .then(function(res){
