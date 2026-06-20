@@ -36,6 +36,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .icon-btn{width:32px;height:32px;border-radius:var(--r-sm);background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2)}
 .icon-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .event-banner{background:var(--accent-dim);border-bottom:1px solid rgba(255,92,0,.2);padding:8px 16px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.jogo-alert-box{background:rgba(74,232,112,.1);border:1px solid rgba(74,232,112,.3);border-radius:var(--r-md);padding:12px 14px;margin:0 16px 12px;display:flex;align-items:center;gap:10px}
+.jogo-alert-icon{width:32px;height:32px;border-radius:50%;background:rgba(74,232,112,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.jogo-alert-text{flex:1;font-size:12px;color:var(--text)}
+.jogo-alert-text b{color:var(--s-conf)}
+.jogo-alert-sub{font-size:10.5px;color:var(--text2);margin-top:2px}
 .event-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .event-text{font-size:12px;color:var(--accent);font-weight:500;flex:1}
@@ -68,7 +73,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .status-strip.ok{background:var(--s-conf)}
 .t-count-icon{font-size:11px;margin-right:3px}
 .turno-left{display:flex;align-items:center;gap:9px;min-width:0}
-.turno-icon{font-size:16px;line-height:1;flex-shrink:0}
+.turno-icon{font-size:16px;line-height:1;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.turno-icon svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .turno-name{font-size:13px;font-weight:600}
 .turno-time{font-size:10px;color:var(--text2);margin-top:1px}
 .t-count{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px}
@@ -228,6 +234,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ck-label{font-size:13px;color:var(--text);flex:1}
 .ck-label.done{color:var(--text3);text-decoration:line-through}
 .ck-del{color:var(--text3);background:none;border:none;cursor:pointer;font-size:18px;padding:0 2px;flex-shrink:0}
+.ck-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px;margin-bottom:10px}
+.ck-card-done{border-color:rgba(74,232,112,.35)}
+.ck-card-atrasada{border-color:rgba(255,92,92,.4)}
+.ck-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.ck-card-titulo{font-size:13px;font-weight:600;color:var(--text);flex:1;line-height:1.4}
+.ck-card-btns{display:flex;gap:6px;flex-shrink:0}
+.ck-icon-btn{width:24px;height:24px;border-radius:6px;background:var(--bg3);border:none;display:flex;align-items:center;justify-content:center;color:var(--text2);cursor:pointer}
+.ck-icon-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ck-icon-btn.del{color:var(--s-ind)}
+.ck-meta{font-size:10.5px;color:var(--text3);margin-top:3px}
+.ck-status{font-size:11px;margin-top:6px;font-weight:600}
+.ck-status.done{color:var(--s-conf)}
+.ck-status.atrasada{color:var(--s-ind)}
+.ck-status.pendente{color:var(--text2)}
+.ck-desc{font-size:11px;color:var(--text2);margin-top:3px;font-style:italic}
+.ck-card-actions{margin-top:10px}
+.ck-action-btn{width:100%;padding:8px;border-radius:var(--r-md);border:1px solid rgba(74,232,112,.4);background:var(--s-conf-bg);color:var(--s-conf);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.ck-action-btn.undo{border-color:var(--border2);background:var(--bg3);color:var(--text2)}
+.ck-inactive-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin:16px 0 8px}
 .backup-dot{width:6px;height:6px;border-radius:50%;background:var(--s-conf);display:inline-block;margin-left:4px;opacity:0;transition:opacity .3s}
 .backup-dot.show{opacity:1}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:150;backdrop-filter:blur(2px)}
@@ -365,6 +390,7 @@ body.pc-mode .turno-card{margin-bottom:12px}
 </div>
 
 <div id="panel-turnos" class="panel active">
+  <div id="jogo-alert" style="display:none"></div>
   <div class="day-strip-wrap"><div class="day-strip" id="day-strip"></div></div>
   <div class="carousel-wrap"><div class="carousel-track" id="carousel-track"></div></div>
 </div>
@@ -384,18 +410,30 @@ body.pc-mode .turno-card{margin-bottom:12px}
     <div class="sec-lbl">Gerencial</div>
     <div id="users-list"></div>
     <div class="sec-lbl" style="margin-top:18px">Motoboys <span style="font-weight:400;color:var(--text3)">(por frequência nos turnos)</span></div>
+    <div class="ck-add-row">
+      <input class="ck-input" id="novo-motoboy-input" placeholder="Nome do novo motoboy...">
+      <button class="ck-add-btn" onclick="addMotoboy()">+</button>
+    </div>
     <div id="mb-eq-list"></div>
   </div>
 </div>
 
 <div id="panel-ck" class="panel">
   <div class="ck-panel">
-    <div style="font-size:16px;font-weight:700;margin-bottom:12px">Checklists</div>
-    <div class="ck-add-row">
-      <input class="ck-input" id="ck-input" placeholder="Nova tarefa...">
-      <button class="ck-add-btn" onclick="addCk()">+</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="font-size:16px;font-weight:700">Checklists diários</div>
+      <button id="ck-notif-btn" style="font-size:10px;font-weight:600;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:5px 11px;cursor:pointer;font-family:inherit" onclick="ativarNotificacoesCk()">Ativar notificações</button>
     </div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Tarefas diárias da operação. Resetam todo dia à meia-noite.</div>
+    <button class="sh-btn sh-btn-s" id="ck-add-task-btn" style="margin:0 0 14px;padding:10px" onclick="abrirNovaTarefa()">+ Nova tarefa</button>
     <div id="ck-list"></div>
+  </div>
+</div>
+
+<div id="panel-conta" class="panel">
+  <div class="eq-panel">
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px">Minha conta</div>
+    <div id="conta-content"></div>
   </div>
 </div>
 
@@ -458,6 +496,45 @@ body.pc-mode .turno-card{margin-bottom:12px}
   <button class="sh-btn sh-btn-p" onclick="saveEvento()">Salvar evento</button>
 </div>
 
+<div class="sheet" id="cks-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="cks-sheet-title">Nova tarefa</div>
+  <div class="sheet-sub">Tarefa diária da operação</div>
+  <input class="sh-input" id="cks-titulo" placeholder="O que precisa ser feito">
+  <div class="field-row" style="margin-top:4px">
+    <div class="field-label">Horário (opcional — se vazio, sem horário fixo)</div>
+    <input type="time" id="cks-horario" style="width:100%;padding:9px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r-md);color:var(--text);font-size:14px;outline:none">
+  </div>
+  <div class="field-row">
+    <div class="field-label">Atribuir a</div>
+    <select class="sh-input" id="cks-atribuido" style="margin-bottom:0">
+      <option value="">Qualquer um da equipe</option>
+    </select>
+  </div>
+  <div class="field-row" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+    <span class="field-label" style="margin:0">Exigir descrição ao concluir</span>
+    <button class="toggle" id="cks-exige-desc-toggle" onclick="this.classList.toggle('on')"></button>
+  </div>
+  <div class="field-row" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 16px">
+    <span class="field-label" style="margin:0">Tarefa ativa</span>
+    <button class="toggle on" id="cks-ativo-toggle" onclick="this.classList.toggle('on')"></button>
+  </div>
+  <button class="sh-btn sh-btn-p" onclick="salvarTarefaCk()">Salvar tarefa</button>
+</div>
+
+<div class="jogo-alert-box" id="ck-popup" style="display:none;position:fixed;left:16px;right:16px;bottom:90px;z-index:300;background:var(--bg2);border:1px solid var(--accent);box-shadow:0 8px 24px rgba(0,0,0,.3)">
+  <div class="jogo-alert-icon" style="background:var(--accent-dim)">
+    <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+  </div>
+  <div class="jogo-alert-text">
+    <b>Hora da tarefa</b> — <span id="ck-popup-titulo"></span>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="sh-btn sh-btn-s" style="margin:0;padding:7px 12px;font-size:11px;flex:none" onclick="concluirPopupCk()">Marcar concluído</button>
+      <button class="sh-btn sh-btn-s" style="margin:0;padding:7px 12px;font-size:11px;flex:none" onclick="dispensarPopupCk()">Dispensar</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet" id="bk-sheet">
   <div class="sheet-handle"></div>
   <div class="sheet-title">Backups automáticos</div>
@@ -501,9 +578,7 @@ body.pc-mode .turno-card{margin-bottom:12px}
     <div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Central → Motoboy</div>
     <textarea class="obs-area" id="msg-central-motoboy" style="margin-top:0;margin-bottom:12px"></textarea>
     <div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Motoboy → Central (confirmação)</div>
-    <textarea class="obs-area" id="msg-motoboy-confirma" style="margin-top:0;margin-bottom:12px"></textarea>
-    <div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Motoboy → Central (indisponível)</div>
-    <textarea class="obs-area" id="msg-motoboy-indisp" style="margin-top:0;margin-bottom:10px"></textarea>
+    <textarea class="obs-area" id="msg-motoboy-confirma" style="margin-top:0;margin-bottom:10px"></textarea>
     <button class="sh-btn sh-btn-s" style="margin:0;padding:9px" onclick="salvarMensagens()">Salvar mensagens</button>
   </div>
 
@@ -526,6 +601,10 @@ body.pc-mode .turno-card{margin-bottom:12px}
   <button class="bnav-tab" data-panel="ck" onclick="setPanel('ck',this)">
     <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
     Checklists
+  </button>
+  <button class="bnav-tab" data-panel="conta" onclick="setPanel('conta',this)">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Conta
   </button>
 </nav>
 
@@ -593,40 +672,46 @@ const FERIADOS_MUN=[
 ];
 const TODOS_FERIADOS=[...FERIADOS_NAC,...FERIADOS_MUN].sort((a,b)=>a.data.localeCompare(b.data));
 
-let EVENTOS_LOCAIS=[];
+let EVENTOS_LOCAIS=[
+  {nome:'Brasil x Haiti — Copa do Mundo',data:'2026-06-19',hora:'21:30',tipo:'jogo'},
+  {nome:'Brasil x Escócia — Copa do Mundo',data:'2026-06-24',hora:'19:00',tipo:'jogo'}
+];
+// Guarda os eventos padrão definidos no código, pra garantir que apareçam mesmo
+// se a nuvem ainda não tiver sido sincronizada com esta atualização.
+const EVENTOS_PADRAO=EVENTOS_LOCAIS.slice();
 
 let EQUIPE=[
-  {nome:'Wesley',tel:'(69) 99241-4968',wa:'5569992414968',pix:'99241-4968',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['noite'],seg:['noite'],ter:['noite'],qua:['noite'],qui:['noite'],sex:['noite'],sab:['noite']}},
-  {nome:'Willian',tel:'(69) 99992-5574',wa:'5569999925574',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:['noite'],sab:['manha','tarde']}},
-  {nome:'Joel',tel:'(69) 99914-9208',wa:'5569999149208',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:['manha','noite'],ter:['manha'],qua:['manha','noite'],qui:['manha'],sex:['manha'],sab:['manha']}},
-  {nome:'Eduardo',tel:'(69) 99245-6844',wa:'5569992456844',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:['tarde'],ter:['tarde'],qua:['tarde'],qui:['tarde'],sex:['tarde'],sab:['tarde']}},
-  {nome:'Samuel',tel:'(11) 94074-9946',wa:'5511940749946',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:['tarde'],ter:['tarde'],qua:['tarde'],qui:['tarde'],sex:['tarde'],sab:['tarde']}},
-  {nome:'Roberto',tel:'(69) 99300-4211',wa:'5569993004211',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['manha'],seg:[],ter:[],qua:[],qui:['noite'],sex:[],sab:[]}},
-  {nome:'Marcos',tel:'(69) 99984-1869',wa:'5569999841869',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:[],qua:[],qui:['noite'],sex:[],sab:['tarde']}},
-  {nome:'Sidnei',tel:'(69) 99286-9852',wa:'5569992869852',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:['noite'],qua:['noite'],qui:[],sex:['noite'],sab:['noite']}},
-  {nome:'Matheus',tel:'(69) 99340-0592',wa:'5569993400592',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:['noite'],sab:['noite']}},
-  {nome:'Gabriel Paulino',tel:'(69) 98403-5050',wa:'5569984035050',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['manha','noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
-  {nome:'Natan',tel:'(27) 99614-4129',wa:'5527996144129',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
-  {nome:'Rafael',tel:'(69) 99310-3204',wa:'5569993103204',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Luan Maikon',tel:'(66) 99200-3351',wa:'5566992003351',pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['manha','noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
-  {nome:'Judialien',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Diego Barbosa',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:['noite'],qua:['noite'],qui:[],sex:[],sab:[]}},
-  {nome:'Pedro Jalles',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Diego Gervazio',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'David',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Ronaldo',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Guilherme',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Andrey',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'M. Augusto',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
-  {nome:'Helio',tel:null,wa:null,pix:'',obs:'',senha:'1234',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}}
+  {nome:'Wesley',tel:'(69) 99241-4968',wa:'5569992414968',pix:'99241-4968',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:['noite'],seg:['noite'],ter:['noite'],qua:['noite'],qui:['noite'],sex:['noite'],sab:['noite']}},
+  {nome:'Willian',tel:'(69) 99992-5574',wa:'5569999925574',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:['noite'],sab:['manha','tarde']}},
+  {nome:'Joel',tel:'(69) 99914-9208',wa:'5569999149208',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:['manha','noite'],ter:['manha'],qua:['manha','noite'],qui:['manha'],sex:['manha'],sab:['manha']}},
+  {nome:'Eduardo',tel:'(69) 99245-6844',wa:'5569992456844',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:['tarde'],ter:['tarde'],qua:['tarde'],qui:['tarde'],sex:['tarde'],sab:['tarde']}},
+  {nome:'Samuel',tel:'(11) 94074-9946',wa:'5511940749946',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:['tarde'],ter:['tarde'],qua:['tarde'],qui:['tarde'],sex:['tarde'],sab:['tarde']}},
+  {nome:'Roberto',tel:'(69) 99300-4211',wa:'5569993004211',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:['manha'],seg:[],ter:[],qua:[],qui:['noite'],sex:[],sab:[]}},
+  {nome:'Marcos',tel:'(69) 99984-1869',wa:'5569999841869',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:[],qua:[],qui:['noite'],sex:[],sab:['tarde']}},
+  {nome:'Sidnei',tel:'(69) 99286-9852',wa:'5569992869852',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:['noite'],qua:['noite'],qui:[],sex:['noite'],sab:['noite']}},
+  {nome:'Matheus',tel:'(69) 99340-0592',wa:'5569993400592',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:['noite'],sab:['noite']}},
+  {nome:'Gabriel Paulino',tel:'(69) 98403-5050',wa:'5569984035050',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:['manha','noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
+  {nome:'Natan',tel:'(27) 99614-4129',wa:'5527996144129',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
+  {nome:'Rafael',tel:'(69) 99310-3204',wa:'5569993103204',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Luan Maikon',tel:'(66) 99200-3351',wa:'5566992003351',pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:['manha','noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:['noite']}},
+  {nome:'Judialien',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:['noite'],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Diego Barbosa',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:['noite'],qua:['noite'],qui:[],sex:[],sab:[]}},
+  {nome:'Pedro Jalles',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Diego Gervazio',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'David',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Ronaldo',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Guilherme',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Andrey',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'M. Augusto',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}},
+  {nome:'Helio',tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}}
 ];
 
 let BAGS=['Bag 1','Bag 2','Bag 3'];
 
 let USERS=[
-  {id:'gerente',role:'Gerente',nome:'Mais',email:'gerente@maisdelivery.com',senha:'maisdelivery2025',cor:'#FF5C00',perms:{turnos:true,equipe:true,financeiro:true,checklists:true,config:true},logs:[{ts:Date.now()-3600000,acao:'Login'},{ts:Date.now()-7200000,acao:'Status Wesley para Confirmado'}]},
-  {id:'financeiro',role:'Financeiro',nome:'Financeiro',email:'fin@maisdelivery.com',senha:'fin2025',cor:'#4AE870',perms:{turnos:true,equipe:true,financeiro:true,checklists:true,config:false},logs:[]},
-  {id:'suporte',role:'Suporte',nome:'Suporte',email:'sup@maisdelivery.com',senha:'sup2025',cor:'#5EE8A0',perms:{turnos:true,equipe:true,financeiro:false,checklists:true,config:false},logs:[]}
+  {id:'gerente',role:'Gerente',nome:'Mais',email:'gerente@maisdelivery.com',senha:'',cor:'#FF5C00',perms:{turnos:true,equipe:true,financeiro:true,checklists:true,config:true},logs:[{ts:Date.now()-3600000,acao:'Login'},{ts:Date.now()-7200000,acao:'Status Wesley para Confirmado'}]},
+  {id:'financeiro',role:'Financeiro',nome:'Financeiro',email:'fin@maisdelivery.com',senha:'',cor:'#4AE870',perms:{turnos:true,equipe:true,financeiro:true,checklists:true,config:false},logs:[]},
+  {id:'suporte',role:'Suporte',nome:'Suporte',email:'sup@maisdelivery.com',senha:'',cor:'#5EE8A0',perms:{turnos:true,equipe:true,financeiro:false,checklists:true,config:false},logs:[]}
 ];
 
 const CENTRAL_WA='5569992640823';
@@ -687,12 +772,37 @@ function initSch(){
   });
 }
 
+// Cada tarefa: titulo, horario (opcional, "HH:MM"), atribuidoA (id de USERS ou '' pra qualquer um),
+// exigeDescricao (pede descrição ao concluir), ativo (false = pausada, não aparece na lista).
+// Campos de estado do dia atual (resetam à meia-noite): concluidoHoje, concluidoEm, concluidoPor,
+// descricaoConcluido, notificadoHoje (evita notificar de novo no mesmo dia).
 let CKS=[
-  {id:1,label:'Confirmar motoboys do turno manhã',done:false},
-  {id:2,label:'Verificar bags disponíveis',done:true},
-  {id:3,label:'Buscar reserva para cobrir vagas Seg a Qua',done:false}
+  {id:1,titulo:'Confirmar motoboys do turno manhã',horario:'06:00',atribuidoA:'',exigeDescricao:false,ativo:true,
+    concluidoHoje:false,concluidoEm:null,concluidoPor:null,descricaoConcluido:null,notificadoHoje:false},
+  {id:2,titulo:'Verificar bags disponíveis',horario:'',atribuidoA:'',exigeDescricao:false,ativo:true,
+    concluidoHoje:false,concluidoEm:null,concluidoPor:null,descricaoConcluido:null,notificadoHoje:false},
+  {id:3,titulo:'Buscar reserva para cobrir vagas Seg a Qua',horario:'',atribuidoA:'',exigeDescricao:false,ativo:true,
+    concluidoHoje:false,concluidoEm:null,concluidoPor:null,descricaoConcluido:null,notificadoHoje:false}
 ];
 let ckSeq=10;
+
+// Migra um item de checklist do formato antigo (label/done) pro formato completo novo,
+// sem perder nada que já existia. Roda sempre que carrega dados da nuvem.
+function migrarCk(c){
+  return {
+    id:c.id,
+    titulo:c.titulo!==undefined?c.titulo:(c.label||''),
+    horario:c.horario||'',
+    atribuidoA:c.atribuidoA||'',
+    exigeDescricao:!!c.exigeDescricao,
+    ativo:c.ativo!==undefined?c.ativo:true,
+    concluidoHoje:c.concluidoHoje!==undefined?c.concluidoHoje:!!c.done,
+    concluidoEm:c.concluidoEm||null,
+    concluidoPor:c.concluidoPor||null,
+    descricaoConcluido:c.descricaoConcluido||null,
+    notificadoHoje:!!c.notificadoHoje
+  };
+}
 
 let menuTarget=null,addTarget=null,addSel=null,bagTarget=null,bagSel=null;
 let evType='feriado';
@@ -740,6 +850,17 @@ function renderBkList(){
 }
 
 function ini(n){return n.split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase()}
+
+// Ícones minimalistas (SVG, mesmo estilo visual do resto do app) para cada turno
+function turnoIconSvg(turnoId){
+  const icons={
+    manha:'<svg viewBox="0 0 24 24"><path d="M12 2v4"/><path d="M4.93 7.93l1.41 1.41"/><path d="M2 14h3"/><path d="M19 14h3"/><path d="M17.66 9.34l1.41-1.41"/><path d="M6 18a6 6 0 0 1 12 0"/><line x1="2" y1="18" x2="22" y2="18"/></svg>',
+    tarde:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M5 5l1.5 1.5"/><path d="M17.5 17.5L19 19"/><path d="M3 12h2"/><path d="M19 12h2"/><path d="M5 19l1.5-1.5"/><path d="M17.5 6.5L19 5"/></svg>',
+    noite:'<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+    almoco:'<svg viewBox="0 0 24 24"><path d="M7 2v6a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V2"/><path d="M9 10v12"/><path d="M17 2c-1.5 0-3 1.5-3 4v4a2 2 0 0 0 2 2h0v8"/></svg>'
+  };
+  return icons[turnoId]||'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>';
+}
 function spCls(s){return{Confirmado:'sp-conf',Aguardando:'sp-ag',Confirmar:'sp-cfm',Indisponível:'sp-ind',Reserva:'sp-res'}[s]||'sp-cfm'}
 function fmtTs(ts){if(!ts)return'—';const d=new Date(ts);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
 function fmtDate(s){if(!s)return'';const p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
@@ -855,8 +976,7 @@ function getEventsNext7(){
 // {dia} vira "hoje", "amanhã" ou o nome do dia automaticamente.
 let MSGS={
   centralParaMotoboy:'Opa {nome}, posso confirmar sua presença nas entregas {dia} {hora_ini} até {hora_fim}?',
-  motoboyConfirma:'Opa, confirmei meu horário pra {dia} {hora_ini} até {hora_fim}',
-  motoboyIndisponivel:'Opa, infelizmente não vou poder estar presente {dia} {hora_ini} até {hora_fim}. Por favor desconsiderem minha escala nesse turno.'
+  motoboyConfirma:'Opa, confirmei meu horário pra {dia} {hora_ini} até {hora_fim}'
 };
 
 function aplicarTemplate(tpl,vars){
@@ -887,6 +1007,7 @@ function buildWaMsgMotoboyConfirma(dayKey,iniH,fimH){
 }
 
 function updateBanner(){
+  checkJogoAlert();
   const evs=getEventsNext7();
   const banner=document.getElementById('event-banner');
   if(!evs.length){banner.style.display='none';return;}
@@ -897,6 +1018,28 @@ function updateBanner(){
   const when=diff===0?'Hoje':diff===1?'Amanhã':'Em '+diff+' dias';
   document.getElementById('event-banner-text').textContent=when+': '+next.nome;
   banner.style.display='flex';
+}
+
+// Alerta específico na aba Turnos quando um jogo do Brasil está nos próximos 2 dias —
+// jogo do Brasil historicamente aumenta os pedidos, então vale reforçar a equipe.
+function checkJogoAlert(){
+  const el=document.getElementById('jogo-alert');
+  if(!el)return;
+  const today=new Date();today.setHours(0,0,0,0);
+  const jogos=EVENTOS_LOCAIS.filter(function(ev){return ev.tipo==='jogo';})
+    .map(function(ev){
+      const d=new Date(ev.data+'T00:00:00');
+      return {ev:ev,diff:Math.round((d-today)/86400000)};
+    })
+    .filter(function(o){return o.diff>=0&&o.diff<=2;})
+    .sort(function(a,b){return a.diff-b.diff;});
+
+  if(!jogos.length){el.style.display='none';el.innerHTML='';return;}
+  const o=jogos[0];
+  const when=o.diff===0?'Hoje':o.diff===1?'Amanhã':'Em 2 dias';
+  const horaTxt=o.ev.hora?(' às '+o.ev.hora):'';
+  el.innerHTML='<div class="jogo-alert-box"><div class="jogo-alert-icon"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--s-conf);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5l3 2.2-1.1 3.6h-3.8L9 9.7z"/><path d="M12 3v4.2M4.8 8l2.7 1.9M19.2 8l-2.7 1.9M7.3 18.5L9 14.8M16.7 18.5L15 14.8"/></svg></div><div class="jogo-alert-text"><b>'+when+horaTxt+'</b> — '+o.ev.nome+'<div class="jogo-alert-sub">Jogo do Brasil costuma aumentar os pedidos. Vale reforçar a equipe nesse horário.</div></div></div>';
+  el.style.display='block';
 }
 
 function buildCarousel(){
@@ -968,7 +1111,7 @@ function renderSlide(day){
     const sugs=vagas>0?getSugs(day,t.id):[];
     const tStatus=turnoStatus(conf,t.min);
 
-    html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="status-strip '+tStatus+'"></div><div class="turno-left"><span class="turno-icon">'+t.icon+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+' . min. '+t.min+'</div></div></div>'+countBadge(conf,t.min)+'</div>';
+    html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="status-strip '+tStatus+'"></div><div class="turno-left"><span class="turno-icon">'+turnoIconSvg(t.id)+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+' . min. '+t.min+'</div></div></div>'+countBadge(conf,t.min)+'</div>';
 
     td.mbs.forEach(function(mb,idx){
       const eq=EQUIPE.find(function(x){return x.nome===mb.nome});
@@ -1214,7 +1357,7 @@ function renderUsers(){
       return '<div class="perm-row"><span class="perm-label">'+(PERM_LABELS[k]||k)+'</span><button class="toggle '+(v?'on':'')+'" onclick="USERS['+ui+'].perms[\''+k+'\']=!USERS['+ui+'].perms[\''+k+'\'];this.classList.toggle(\'on\');saveBackup(\'Permissoes atualizadas\')"></button></div>';
     }).join('');
     const logsHtml=u.logs.length?u.logs.slice(-5).reverse().map(function(l){return '<div class="log-entry">'+l.acao+'<div class="log-ts">'+fmtTs(l.ts)+'</div></div>'}).join(''):'<div style="font-size:12px;color:var(--text3)">Sem registros</div>';
-    return '<div class="user-card"><div class="user-head" onclick="toggleUser('+ui+')"><div class="user-av" style="background:'+(colors[ui]||'#888')+'">'+u.nome.slice(0,2).toUpperCase()+'</div><div class="user-info"><div class="user-name" id="uname-'+ui+'">'+u.nome+'</div><div class="user-role">'+u.role+'</div></div><span class="user-arrow" id="uarr-'+ui+'">&rsaquo;</span></div><div class="user-body" id="ubody-'+ui+'"><div class="field-row"><div class="field-label">Nome</div><input class="field-val" value="'+u.nome+'" onchange="USERS['+ui+'].nome=this.value;document.getElementById(\'uname-'+ui+'\').textContent=this.value;saveBackup(\'Nome atualizado\')"></div><div class="field-row"><div class="field-label">E-mail</div><input class="field-val" type="email" value="'+u.email+'" onchange="usersEmailChanged('+ui+',this.value)"></div><div class="field-row"><div class="field-label">Senha</div><input class="field-val" type="password" value="'+u.senha+'" onchange="usersSenhaChanged('+ui+',this.value)"></div><div class="field-row"><div class="field-label" style="margin-bottom:8px">Permissoes</div>'+permsHtml+'</div><div class="field-row"><div class="field-label" style="margin-bottom:6px">Log de acoes</div>'+logsHtml+'</div></div></div>';
+    return '<div class="user-card"><div class="user-head" onclick="toggleUser('+ui+')"><div class="user-av" style="background:'+(colors[ui]||'#888')+'">'+u.nome.slice(0,2).toUpperCase()+'</div><div class="user-info"><div class="user-name" id="uname-'+ui+'">'+u.nome+'</div><div class="user-role">'+u.role+'</div></div><span class="user-arrow" id="uarr-'+ui+'">&rsaquo;</span></div><div class="user-body" id="ubody-'+ui+'"><div class="field-row"><div class="field-label">Nome</div><input class="field-val" value="'+u.nome+'" onchange="USERS['+ui+'].nome=this.value;document.getElementById(\'uname-'+ui+'\').textContent=this.value;saveBackup(\'Nome atualizado\')"></div><div class="field-row"><div class="field-label">E-mail</div><input class="field-val" type="email" value="'+u.email+'" onchange="usersEmailChanged('+ui+',this.value)"></div><div class="field-row"><div class="field-label">Senha</div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">Em branco mantem a senha atual. Preencha so para trocar.</div><input class="field-val" type="password" value="'+u.senha+'" placeholder="Deixe em branco para manter" onchange="usersSenhaChanged('+ui+',this.value)"></div><div class="field-row"><div class="field-label" style="margin-bottom:8px">Permissoes</div>'+permsHtml+'</div><div class="field-row"><div class="field-label" style="margin-bottom:6px">Log de acoes</div>'+logsHtml+'</div></div></div>';
   }).join('');
 }
 
@@ -1237,8 +1380,66 @@ function renderMbEq(){
       return '<div class="disp-day-row"><span class="disp-day-lbl">'+DAY_LBL[d]+'</span><div class="disp-turn-opts">'+opts+'</div></div>';
     }).join('');
     const bagInfo=e.bag?('<div class="mb-body-sec"><div class="field-label">Bag atual</div><div style="font-size:13px;color:var(--s-res);margin-top:4px">'+e.bag+' desde '+fmtTs(e.bagTs)+'</div></div>'):'';
-    return '<div class="mb-card"><div class="mb-card-head" onclick="toggleMbCard('+i+')"><div class="mb-card-av">'+ini(e.nome)+'</div><div class="mb-card-info"><div class="mb-card-name">'+e.nome+'</div><div class="mb-card-sub">'+(e.tel||'Sem numero')+'</div></div><span class="mb-freq">'+mbFreq(e.nome)+'x</span><span class="mb-card-arrow" id="mbarr-'+i+'">&rsaquo;</span></div><div class="mb-card-body" id="mbbody-'+i+'"><div class="mb-body-sec"><div class="field-label">Nome</div><input class="field-val" value="'+e.nome+'" onchange="motoboyNomeChanged('+realIdx+',this.value)"><div class="field-label" style="margin-top:10px">Telefone</div><input class="field-val" value="'+(e.tel||'')+'" placeholder="(69) 9xxxx-xxxx" onchange="EQUIPE['+realIdx+'].tel=this.value;saveBackup(\'Telefone atualizado\')">'+waBtn+'</div><div class="mb-body-sec"><div class="field-label">Chave Pix</div><div class="pix-row"><input class="pix-val" value="'+(e.pix||'')+'" placeholder="Chave Pix" id="pix-'+i+'" onchange="EQUIPE['+realIdx+'].pix=this.value;saveBackup(\'Pix atualizado\')"><button class="copy-btn" onclick="copyPix('+i+')">Copiar</button></div></div><div class="mb-body-sec"><div class="field-label">Senha de acesso (app do motoboy)</div><div class="pix-row"><input class="pix-val" type="text" value="'+(e.senha||'')+'" placeholder="Senha" id="senha-'+i+'" onchange="motoboySenhaChanged('+realIdx+',this.value)"><button class="copy-btn" onclick="document.getElementById(\'senha-'+i+'\').type=document.getElementById(\'senha-'+i+'\').type===\'password\'?\'text\':\'password\'">Ver</button></div></div><div class="mb-body-sec"><div class="field-label">Disponibilidade habitual</div><div class="disp-grid">'+dispGrid+'</div></div><div class="mb-body-sec"><div class="field-label">Observacoes</div><textarea class="obs-area" onchange="EQUIPE['+realIdx+'].obs=this.value;saveBackup(\'Observacao atualizada\')">'+(e.obs||'')+'</textarea></div>'+bagInfo+'</div></div>';
+    const delBtn='<div class="mb-body-sec"><button style="width:100%;padding:10px;border-radius:var(--r-md);background:var(--s-ind-bg);border:1px solid rgba(255,92,92,.35);color:var(--s-ind);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onclick="removeMotoboy('+realIdx+')">Remover motoboy</button></div>';
+    return '<div class="mb-card"><div class="mb-card-head" onclick="toggleMbCard('+i+')"><div class="mb-card-av">'+ini(e.nome)+'</div><div class="mb-card-info"><div class="mb-card-name">'+e.nome+'</div><div class="mb-card-sub">'+(e.tel||'Sem numero')+'</div></div><span class="mb-freq">'+mbFreq(e.nome)+'x</span><span class="mb-card-arrow" id="mbarr-'+i+'">&rsaquo;</span></div><div class="mb-card-body" id="mbbody-'+i+'"><div class="mb-body-sec"><div class="field-label">Nome</div><input class="field-val" value="'+e.nome+'" onchange="motoboyNomeChanged('+realIdx+',this.value)"><div class="field-label" style="margin-top:10px">Telefone</div><input class="field-val" value="'+(e.tel||'')+'" placeholder="(69) 9xxxx-xxxx" onchange="EQUIPE['+realIdx+'].tel=this.value;saveBackup(\'Telefone atualizado\')">'+waBtn+'</div><div class="mb-body-sec"><div class="field-label">Chave Pix</div><div class="pix-row"><input class="pix-val" value="'+(e.pix||'')+'" placeholder="Chave Pix" id="pix-'+i+'" onchange="EQUIPE['+realIdx+'].pix=this.value;saveBackup(\'Pix atualizado\')"><button class="copy-btn" onclick="copyPix('+i+')">Copiar</button></div></div><div class="mb-body-sec"><div class="field-label">Senha de acesso (app do motoboy)</div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">Em branco mantem a senha atual. Preencha so para trocar.</div><div class="pix-row"><input class="pix-val" type="text" value="'+(e.senha||'')+'" placeholder="Deixe em branco para manter" id="senha-'+i+'" onchange="motoboySenhaChanged('+realIdx+',this.value)"><button class="copy-btn" onclick="document.getElementById(\'senha-'+i+'\').type=document.getElementById(\'senha-'+i+'\').type===\'password\'?\'text\':\'password\'">Ver</button></div></div><div class="mb-body-sec"><div class="field-label">Disponibilidade habitual</div><div class="disp-grid">'+dispGrid+'</div></div><div class="mb-body-sec"><div class="field-label">Observacoes</div><textarea class="obs-area" onchange="EQUIPE['+realIdx+'].obs=this.value;saveBackup(\'Observacao atualizada\')">'+(e.obs||'')+'</textarea></div>'+bagInfo+delBtn+'</div></div>';
   }).join('');
+}
+
+// Adiciona um motoboy novo (nome unico, comeca sem senha/pix/disponibilidade)
+function addMotoboy(){
+  const inp=document.getElementById('novo-motoboy-input');
+  if(!inp)return;
+  const nome=inp.value.trim();
+  if(!nome){inp.focus();return;}
+  const existe=EQUIPE.some(function(x){return x.nome.toLowerCase()===nome.toLowerCase()});
+  if(existe){alert('Já existe um motoboy com esse nome.');return;}
+  EQUIPE.push({nome:nome,tel:null,wa:null,pix:'',obs:'',senha:'',bag:null,bagTs:null,
+    disp:{dom:[],seg:[],ter:[],qua:[],qui:[],sex:[],sab:[]}});
+  inp.value='';
+  saveBackup('Motoboy '+nome+' adicionado');
+  renderMbEq();
+  populateMotoboySelect();
+  gistStatus('Motoboy adicionado. Defina uma senha de acesso pra ele abrindo o card.');
+}
+
+// Remove um motoboy (pede confirmação — ação destrutiva)
+function removeMotoboy(idx){
+  const e=EQUIPE[idx];
+  if(!e)return;
+  const ok=confirm('Remover '+e.nome+' da equipe? Isso não pode ser desfeito.\n\nOs turnos já escalados pra ele em dias futuros vão continuar aparecendo até você ajustar manualmente.');
+  if(!ok)return;
+  EQUIPE.splice(idx,1);
+  saveBackup('Motoboy '+e.nome+' removido');
+  renderMbEq();
+  populateMotoboySelect();
+}
+
+// Aba "Conta" — só o motoboy vê, edita os próprios dados (disponibilidade, pix, senha)
+function renderConta(){
+  const el=document.getElementById('conta-content');
+  if(!el)return;
+  if(!SESSION||SESSION.kind!=='motoboy'){el.innerHTML='';return;}
+  const realIdx=EQUIPE.findIndex(function(x){return x.nome===SESSION.nome});
+  if(realIdx===-1){el.innerHTML='<div class="ev-empty">Conta não encontrada. Tente sair e entrar de novo.</div>';return;}
+  const e=EQUIPE[realIdx];
+  const dispGrid=JS_DAYS.map(function(d){
+    const turns=d==='dom'?['manha','almoco','tarde','noite']:['manha','tarde','noite'];
+    const opts=turns.map(function(t){
+      const on=(e.disp[d]||[]).indexOf(t)>-1;
+      return '<button class="disp-btn '+(on?'on':'')+'" data-idx="'+realIdx+'" data-day="'+d+'" data-turno="'+t+'" onclick="toggleDisp(this)">'+TURN_LBL[t]+'</button>';
+    }).join('');
+    return '<div class="disp-day-row"><span class="disp-day-lbl">'+DAY_LBL[d]+'</span><div class="disp-turn-opts">'+opts+'</div></div>';
+  }).join('');
+  el.innerHTML='<div class="mb-card"><div class="mb-card-body open" style="max-height:none">'+
+    '<div class="mb-body-sec"><div class="field-label">Chave Pix</div><div class="pix-row"><input class="pix-val" value="'+(e.pix||'')+'" placeholder="Chave Pix" id="conta-pix" onchange="EQUIPE['+realIdx+'].pix=this.value;saveBackup(\'Pix atualizado\')"><button class="copy-btn" onclick="copyContaPix()">Copiar</button></div></div>'+
+    '<div class="mb-body-sec"><div class="field-label">Senha de acesso</div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">Em branco mantém a senha atual. Preencha só para trocar.</div><div class="pix-row"><input class="pix-val" type="password" value="" placeholder="Deixe em branco para manter" id="conta-senha" onchange="motoboySenhaChanged('+realIdx+',this.value)"><button class="copy-btn" onclick="document.getElementById(\'conta-senha\').type=document.getElementById(\'conta-senha\').type===\'password\'?\'text\':\'password\'">Ver</button></div></div>'+
+    '<div class="mb-body-sec"><div class="field-label">Disponibilidade habitual</div><div class="disp-grid">'+dispGrid+'</div></div>'+
+  '</div></div>';
+}
+function copyContaPix(){
+  const v=document.getElementById('conta-pix').value;
+  if(!v)return;
+  navigator.clipboard.writeText(v).catch(function(){});
 }
 
 function toggleMbCard(i){
@@ -1265,20 +1466,238 @@ function copyPix(i){
   });
 }
 
+// Só o Gerente pode criar/editar/excluir tarefas. Qualquer gerencial pode marcar concluído.
+function isGerente(){
+  return !!(SESSION&&SESSION.kind==='gerencial'&&SESSION.userId==='gerente');
+}
+
+function nomeAtribuido(atribuidoA){
+  if(!atribuidoA)return'Qualquer um';
+  const u=USERS.find(function(x){return x.id===atribuidoA});
+  return u?u.nome:'Qualquer um';
+}
+
+function nomeQuemMarcou(){
+  if(SESSION&&SESSION.kind==='gerencial'){
+    const u=USERS.find(function(x){return x.id===SESSION.userId});
+    return u?u.nome:'Gerencial';
+  }
+  return(SESSION&&SESSION.nome)||'Equipe';
+}
+
 function renderCk(){
-  document.getElementById('ck-list').innerHTML=CKS.map(function(c,i){
-    const checkIcon=c.done?'<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:#0A0A0A;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg>':'';
-    return '<div class="ck-item" onclick="toggleCk('+i+')"><div class="ck-box '+(c.done?'done':'')+'">'+checkIcon+'</div><span class="ck-label '+(c.done?'done':'')+'">'+c.label+'</span><button class="ck-del" onclick="event.stopPropagation();delCk('+i+')">&times;</button></div>';
-  }).join('');
+  const podeEditar=isGerente();
+  const agora=new Date();
+  const horaAtual=String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0');
+
+  function ckCard(c){
+    const idx=CKS.indexOf(c);
+    const atrasada=!!(c.horario&&!c.concluidoHoje&&horaAtual>c.horario);
+    let statusHtml;
+    if(c.concluidoHoje){
+      const hora=c.concluidoEm?new Date(c.concluidoEm).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+      statusHtml='<div class="ck-status done">Concluído hoje às '+hora+' por '+(c.concluidoPor||'?')+'</div>'+
+        (c.descricaoConcluido?'<div class="ck-desc">"'+c.descricaoConcluido+'"</div>':'');
+    }else if(atrasada){
+      statusHtml='<div class="ck-status atrasada">Atrasada — previsto pra '+c.horario+'</div>';
+    }else{
+      statusHtml='<div class="ck-status pendente">Pendente'+(c.horario?(' — às '+c.horario):'')+'</div>';
+    }
+    const metaHtml='<div class="ck-meta">'+nomeAtribuido(c.atribuidoA)+(c.exigeDescricao?' · exige descrição ao concluir':'')+'</div>';
+    const actionBtn=c.concluidoHoje
+      ?'<button class="ck-action-btn undo" onclick="desmarcarConcluidoCk('+idx+')">Reabrir tarefa</button>'
+      :'<button class="ck-action-btn" onclick="marcarConcluidoCk('+idx+')">Marcar concluído</button>';
+    const editBtns=podeEditar?(
+      '<button class="ck-icon-btn" onclick="editarTarefaCk('+idx+')" title="Editar"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'+
+      '<button class="ck-icon-btn del" onclick="excluirTarefaCk('+idx+')" title="Excluir"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>'
+    ):'';
+
+    return '<div class="ck-card '+(c.concluidoHoje?'ck-card-done':(atrasada?'ck-card-atrasada':''))+'">'+
+      '<div class="ck-card-top"><div class="ck-card-titulo">'+c.titulo+'</div><div class="ck-card-btns">'+editBtns+'</div></div>'+
+      metaHtml+statusHtml+
+      '<div class="ck-card-actions">'+actionBtn+'</div>'+
+    '</div>';
+  }
+
+  const ativos=CKS.filter(function(c){return c.ativo!==false});
+  const inativos=CKS.filter(function(c){return c.ativo===false});
+
+  let html='';
+  if(!ativos.length){
+    html='<div class="ev-empty">Nenhuma tarefa cadastrada'+(podeEditar?'. Toque em "+ Nova tarefa" pra criar a primeira.':'.')+'</div>';
+  }else{
+    html=ativos.map(ckCard).join('');
+  }
+  if(inativos.length&&podeEditar){
+    html+='<div class="ck-inactive-lbl">Tarefas pausadas</div>'+inativos.map(ckCard).join('');
+  }
+  document.getElementById('ck-list').innerHTML=html;
+
+  const addBtn=document.getElementById('ck-add-task-btn');
+  if(addBtn)addBtn.style.display=podeEditar?'':'none';
+
+  const notifBtn=document.getElementById('ck-notif-btn');
+  if(notifBtn&&'Notification' in window){
+    if(Notification.permission==='granted'){notifBtn.textContent='Notificações ativadas';notifBtn.style.color='var(--s-conf)';}
+    else if(Notification.permission==='denied'){notifBtn.textContent='Notificações bloqueadas';}
+  }
 }
-function addCk(){
-  const inp=document.getElementById('ck-input');
-  if(!inp.value.trim())return;
-  CKS.push({id:ckSeq++,label:inp.value.trim(),done:false});
-  inp.value='';renderCk();
+
+let ckEditIdx=-1;
+function populateAtribuidoSelect(){
+  const sel=document.getElementById('cks-atribuido');
+  if(!sel)return;
+  const opts=['<option value="">Qualquer um da equipe</option>'];
+  USERS.forEach(function(u){opts.push('<option value="'+u.id+'">'+u.nome+' ('+u.role+')</option>');});
+  sel.innerHTML=opts.join('');
 }
-function toggleCk(i){CKS[i].done=!CKS[i].done;renderCk();}
-function delCk(i){CKS.splice(i,1);renderCk();}
+
+function abrirNovaTarefa(){
+  if(!isGerente()){alert('Só o Gerente pode criar tarefas.');return;}
+  ckEditIdx=-1;
+  document.getElementById('cks-sheet-title').textContent='Nova tarefa';
+  document.getElementById('cks-titulo').value='';
+  document.getElementById('cks-horario').value='';
+  populateAtribuidoSelect();
+  document.getElementById('cks-atribuido').value='';
+  document.getElementById('cks-exige-desc-toggle').classList.remove('on');
+  document.getElementById('cks-ativo-toggle').classList.add('on');
+  openSheet('cks-sheet');
+}
+
+function editarTarefaCk(idx){
+  if(!isGerente()){alert('Só o Gerente pode editar tarefas.');return;}
+  const c=CKS[idx];if(!c)return;
+  ckEditIdx=idx;
+  document.getElementById('cks-sheet-title').textContent='Editar tarefa';
+  document.getElementById('cks-titulo').value=c.titulo;
+  document.getElementById('cks-horario').value=c.horario||'';
+  populateAtribuidoSelect();
+  document.getElementById('cks-atribuido').value=c.atribuidoA||'';
+  document.getElementById('cks-exige-desc-toggle').classList.toggle('on',!!c.exigeDescricao);
+  document.getElementById('cks-ativo-toggle').classList.toggle('on',c.ativo!==false);
+  openSheet('cks-sheet');
+}
+
+function salvarTarefaCk(){
+  const titulo=document.getElementById('cks-titulo').value.trim();
+  if(!titulo){document.getElementById('cks-titulo').focus();return;}
+  const horario=document.getElementById('cks-horario').value||'';
+  const atribuidoA=document.getElementById('cks-atribuido').value||'';
+  const exigeDescricao=document.getElementById('cks-exige-desc-toggle').classList.contains('on');
+  const ativo=document.getElementById('cks-ativo-toggle').classList.contains('on');
+
+  if(ckEditIdx>-1&&CKS[ckEditIdx]){
+    const c=CKS[ckEditIdx];
+    c.titulo=titulo;c.horario=horario;c.atribuidoA=atribuidoA;c.exigeDescricao=exigeDescricao;c.ativo=ativo;
+    saveBackup('Tarefa "'+titulo+'" editada');
+  }else{
+    CKS.push({id:ckSeq++,titulo:titulo,horario:horario,atribuidoA:atribuidoA,exigeDescricao:exigeDescricao,ativo:ativo,
+      concluidoHoje:false,concluidoEm:null,concluidoPor:null,descricaoConcluido:null,notificadoHoje:false});
+    saveBackup('Tarefa "'+titulo+'" criada');
+  }
+  closeAll();
+  renderCk();
+}
+
+function excluirTarefaCk(idx){
+  if(!isGerente()){alert('Só o Gerente pode excluir tarefas.');return;}
+  const c=CKS[idx];if(!c)return;
+  const ok=confirm('Excluir a tarefa "'+c.titulo+'"? Isso não pode ser desfeito.');
+  if(!ok)return;
+  CKS.splice(idx,1);
+  saveBackup('Tarefa "'+c.titulo+'" excluída');
+  renderCk();
+}
+
+function marcarConcluidoCk(idx){
+  const c=CKS[idx];if(!c)return;
+  if(c.exigeDescricao){
+    const desc=prompt('Descreva o que foi feito em "'+c.titulo+'":');
+    if(desc===null)return;
+    if(!desc.trim()){alert('Essa tarefa exige uma descrição pra ser concluída.');return;}
+    c.descricaoConcluido=desc.trim();
+  }else{
+    c.descricaoConcluido=null;
+  }
+  c.concluidoHoje=true;
+  c.concluidoEm=Date.now();
+  c.concluidoPor=nomeQuemMarcou();
+  saveBackup('Tarefa "'+c.titulo+'" concluída');
+  renderCk();
+}
+
+function desmarcarConcluidoCk(idx){
+  const c=CKS[idx];if(!c)return;
+  c.concluidoHoje=false;c.concluidoEm=null;c.concluidoPor=null;c.descricaoConcluido=null;
+  saveBackup('Tarefa "'+c.titulo+'" reaberta');
+  renderCk();
+}
+
+// Reset diário do checklist — chamado pelo schedMidnight()
+function ckMidnightReset(){
+  CKS.forEach(function(c){
+    c.concluidoHoje=false;c.concluidoEm=null;c.concluidoPor=null;c.descricaoConcluido=null;c.notificadoHoje=false;
+  });
+}
+
+// Notificações + popup no horário agendado
+function ativarNotificacoesCk(){
+  if(!('Notification' in window)){alert('Seu navegador não suporta notificações.');return;}
+  Notification.requestPermission().then(function(perm){
+    const btn=document.getElementById('ck-notif-btn');
+    if(!btn)return;
+    if(perm==='granted'){btn.textContent='Notificações ativadas';btn.style.color='var(--s-conf)';}
+    else{btn.textContent='Notificações bloqueadas';}
+  });
+}
+
+let ckCheckerTimer=null;
+function startCkChecker(){
+  if(ckCheckerTimer)clearInterval(ckCheckerTimer);
+  ckCheckerTimer=setInterval(verificarTarefasAgendadas,30000);
+  verificarTarefasAgendadas();
+}
+
+function verificarTarefasAgendadas(){
+  if(!SESSION||SESSION.kind!=='gerencial')return; // checklist é só pra equipe gerencial
+  const agora=new Date();
+  const horaAtual=String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0');
+  CKS.forEach(function(c,idx){
+    if(!c.ativo||!c.horario||c.concluidoHoje||c.notificadoHoje)return;
+    if(horaAtual>=c.horario){
+      const souODestinatario=!c.atribuidoA||SESSION.userId===c.atribuidoA;
+      if(!souODestinatario)return;
+      c.notificadoHoje=true;
+      saveBackup('Notificação disparada: '+c.titulo);
+      dispararNotificacaoCk(c,idx);
+    }
+  });
+}
+
+function dispararNotificacaoCk(c,idx){
+  if('Notification' in window&&Notification.permission==='granted'){
+    try{new Notification('Hora da tarefa: '+c.titulo,{body:'Toque pra abrir o checklist'});}catch(e){}
+  }
+  mostrarPopupCk(idx);
+}
+
+let ckPopupIdx=-1;
+function mostrarPopupCk(idx){
+  const c=CKS[idx];if(!c)return;
+  ckPopupIdx=idx;
+  document.getElementById('ck-popup-titulo').textContent=c.titulo;
+  document.getElementById('ck-popup').style.display='flex';
+}
+function concluirPopupCk(){
+  if(ckPopupIdx>-1)marcarConcluidoCk(ckPopupIdx);
+  document.getElementById('ck-popup').style.display='none';
+  ckPopupIdx=-1;
+}
+function dispensarPopupCk(){
+  document.getElementById('ck-popup').style.display='none';
+  ckPopupIdx=-1;
+}
 
 function renderCfg(){
   let html='';
@@ -1296,19 +1715,15 @@ function renderCfg(){
 function preencherMensagens(){
   const a=document.getElementById('msg-central-motoboy');
   const b=document.getElementById('msg-motoboy-confirma');
-  const c=document.getElementById('msg-motoboy-indisp');
   if(a)a.value=MSGS.centralParaMotoboy;
   if(b)b.value=MSGS.motoboyConfirma;
-  if(c)c.value=MSGS.motoboyIndisponivel;
 }
 
 function salvarMensagens(){
   const a=document.getElementById('msg-central-motoboy');
   const b=document.getElementById('msg-motoboy-confirma');
-  const c=document.getElementById('msg-motoboy-indisp');
   if(a&&a.value.trim())MSGS.centralParaMotoboy=a.value.trim();
   if(b&&b.value.trim())MSGS.motoboyConfirma=b.value.trim();
-  if(c&&c.value.trim())MSGS.motoboyIndisponivel=c.value.trim();
   saveBackup('Mensagens de WhatsApp atualizadas');
   gistStatus('Mensagens salvas');
 }
@@ -1369,7 +1784,8 @@ function schedMidnight(){
     Object.values(SCH[ontem]||{}).forEach(function(t){
       t.mbs.forEach(function(mb){if(['Confirmado','Aguardando','Reserva'].indexOf(mb.status)>-1)mb.status='Confirmar'});
     });
-    buildCarousel();schedMidnight();
+    ckMidnightReset();
+    buildCarousel();renderCk();schedMidnight();
   },mn-now);
 }
 
@@ -1502,7 +1918,8 @@ function doLogout(){
 function applySessionUI(){
   const isMotoboy=SESSION.kind==='motoboy';
   document.querySelectorAll('.bnav-tab').forEach(function(b){
-    const show=!isMotoboy||b.dataset.panel==='turnos';
+    const panel=b.dataset.panel;
+    const show=isMotoboy?(panel==='turnos'||panel==='conta'):(panel!=='conta');
     b.style.display=show?'':'none';
   });
   const roleLabel=document.getElementById('topbar-role-label');
@@ -1560,6 +1977,7 @@ function startApp(){
   document.getElementById('app-root').style.display='block';
   applySessionUI();
   buildCarousel();
+  startCkChecker();
 }
 
 function tryAutoLogin(){
@@ -1576,15 +1994,9 @@ function tryAutoLogin(){
   }catch(e){return false;}
 }
 
-// Mensagem do motoboy avisando indisponibilidade pra central
-function buildWaMsgMotoboyIndisponivel(dayKey,iniH,fimH){
-  const msg=aplicarTemplate(MSGS.motoboyIndisponivel,{dia:diaRelativoLabel(dayKey),hora_ini:iniH||'',hora_fim:fimH||''});
-  return encodeURIComponent(msg);
-}
-
 // Visão do motoboy:
 // - Se ele está CONFIRMADO em algum turno do dia, vê o dia inteiro (todos os turnos e colegas).
-// - Senão, vê apenas os turnos onde ele está escalado (pra confirmar/indisponibilizar) e vagas abertas.
+// - Senão, vê apenas os turnos onde ele está escalado (pra confirmar) e vagas abertas.
 function renderSlideMotoboy(day){
   const slide=document.getElementById('slide-'+day);
   if(!slide)return;
@@ -1615,18 +2027,19 @@ function renderSlideMotoboy(day){
     if(!confirmadoNoDia && idx===-1 && vagas<=0)return;
     any=true;
     const conf=td.mbs.filter(function(m){return ['Confirmado','Reserva'].indexOf(m.status)>-1}).length;
-    const tStatus=turnoStatus(conf,t.min);
+    let tStatus=turnoStatus(conf,t.min);
+    // Vaga é uma oportunidade positiva pro motoboy — nunca mostra vermelho/amarelo nesse caso pra ele
+    if(vagas>0)tStatus='ok';
 
-    html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="status-strip '+tStatus+'"></div><div class="turno-left"><span class="turno-icon">'+t.icon+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+'</div></div></div></div>';
+    html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="status-strip '+tStatus+'"></div><div class="turno-left"><span class="turno-icon">'+turnoIconSvg(t.id)+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+'</div></div></div></div>';
 
     if(idx>-1){
       const mb=td.mbs[idx];
       const rowCls=rowStatusClass(mb.status);
       html+='<div class="mb-row '+rowCls+'"><div class="mb-av">'+ini(nome)+'</div><div class="mb-info"><div class="mb-name">Você · '+mb.ini+' - '+mb.fim+'</div></div><div class="mb-right"><span class="status-pill '+spCls(mb.status)+'">'+mb.status+'</span></div></div>';
-      html+='<div class="mb-action-row">';
-      if(mb.status!=='Confirmado')html+='<button class="mb-act-btn mb-act-confirm" onclick="motoboyConfirmar(\''+day+'\',\''+t.id+'\','+idx+')">Confirmar presença</button>';
-      if(mb.status!=='Indisponível')html+='<button class="mb-act-btn mb-act-indisp" onclick="motoboyIndisponivel(\''+day+'\',\''+t.id+'\','+idx+')">Marcar indisponível</button>';
-      html+='</div>';
+      if(mb.status!=='Confirmado'){
+        html+='<div class="mb-action-row"><button class="mb-act-btn mb-act-confirm" onclick="motoboyConfirmar(\''+day+'\',\''+t.id+'\','+idx+')">Confirmar presença</button></div>';
+      }
     }
 
     // Lista de colegas:
@@ -1667,15 +2080,6 @@ function motoboyConfirmar(day,tid,idx){
   setTimeout(function(){window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');},150);
 }
 
-function motoboyIndisponivel(day,tid,idx){
-  const mb=SCH[day][tid].mbs[idx];
-  mb.status='Indisponível';
-  saveBackup(mb.nome+' marcou indisponível pelo app');
-  renderSlide(day);buildCarousel();
-  const msg=buildWaMsgMotoboyIndisponivel(day,mb.ini,mb.fim);
-  setTimeout(function(){window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');},150);
-}
-
 function motoboyReservar(day,tid){
   const t=CFG[day][tid];
   const nome=SESSION.nome;
@@ -1695,9 +2099,10 @@ function setPanel(id,btn){
   if(id==='ev')renderEventos();
   if(id==='eq'){renderUsers();renderMbEq();}
   if(id==='ck')renderCk();
+  if(id==='conta')renderConta();
 }
 
-const ALL_SHEETS=['status-sheet','add-sheet','bag-sheet','ev-sheet','cfg-sheet','bk-sheet','cont-sheet'];
+const ALL_SHEETS=['status-sheet','add-sheet','bag-sheet','ev-sheet','cfg-sheet','bk-sheet','cont-sheet','cks-sheet'];
 function openSheet(id){
   closeAll();
   document.getElementById(id).classList.add('open');
@@ -1747,15 +2152,33 @@ function applyCloudData(p){
   if(p.SCH)SCH=p.SCH;
   if(p.CFG)CFG=p.CFG;
   if(p.BAGS)BAGS=p.BAGS;
-  if(p.EVENTOS_LOCAIS)EVENTOS_LOCAIS=p.EVENTOS_LOCAIS;
-  if(p.CKS)CKS=p.CKS;
+  if(p.EVENTOS_LOCAIS){
+    EVENTOS_LOCAIS=p.EVENTOS_LOCAIS;
+    // garante que os eventos padrão (ex.: jogos do Brasil) apareçam mesmo que
+    // a nuvem ainda não os tenha (primeira sincronização após esta atualização)
+    EVENTOS_PADRAO.forEach(function(def){
+      const existe=EVENTOS_LOCAIS.some(function(ev){return ev.data===def.data&&ev.nome===def.nome;});
+      if(!existe)EVENTOS_LOCAIS.push(def);
+    });
+  }
+  if(p.CKS)CKS=p.CKS.map(migrarCk);
   if(p.MSGS)MSGS=p.MSGS;
   if(p.HIST&&Object.keys(p.HIST).length)HIST=p.HIST;
   if(p.EQUIPE){
+    // atualiza os que já existem e adiciona os que vieram novos de outro dispositivo
     p.EQUIPE.forEach(function(es){
       const e=EQUIPE.find(function(x){return x.nome===es.nome});
-      if(e){e.tel=es.tel;e.wa=es.wa;e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;}
+      if(e){
+        e.tel=es.tel;e.wa=es.wa;e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;
+      }else{
+        EQUIPE.push({nome:es.nome,tel:es.tel,wa:es.wa,pix:'',obs:es.obs||'',senha:'',bag:es.bag,bagTs:es.bagTs,disp:es.disp||{}});
+      }
     });
+    // remove localmente quem foi excluído em outro dispositivo
+    const nomesCloud=p.EQUIPE.map(function(es){return es.nome});
+    for(let i=EQUIPE.length-1;i>=0;i--){
+      if(nomesCloud.indexOf(EQUIPE[i].nome)===-1)EQUIPE.splice(i,1);
+    }
   }
   if(p.USERS){
     p.USERS.forEach(function(us){
@@ -1941,6 +2364,7 @@ if(tryAutoLogin()){
   document.getElementById('login-gate').style.display='none';
   document.getElementById('app-root').style.display='block';
   applySessionUI();
+  startCkChecker();
 }
 buildCarousel();
 updateBanner();
