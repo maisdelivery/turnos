@@ -2234,9 +2234,16 @@ function attemptLoginMotoboy(nome,senha){
 // Primeira vez que o relay roda: ele ainda não tem nenhuma senha guardada.
 // Esta função semeia a "gaveta" de senhas do relay com os valores atuais,
 // uma única vez (o relay se protege e ignora se já houver dados — ver handleUpdateCredentials).
+// IMPORTANTE: como as senhas reais não ficam mais no código-fonte (por segurança),
+// se o relay precisar ser semeado do zero (ex.: relay novo, nunca configurado), usamos
+// uma senha temporária conhecida — troque ela assim que conseguir entrar.
+// Motoboys sempre começam com a senha temporária "1234" (igual já era o padrão antes).
+const SEED_SENHA_TEMP_GERENCIAL='trocar123';
+const SEED_SENHA_TEMP_MOTOBOY='1234';
+
 function seedCredentials(){
-  const gerencial=USERS.map(function(u){return{id:u.id,email:u.email,senha:u.senha};});
-  const motoboy=EQUIPE.map(function(e){return{nome:e.nome,senha:e.senha};});
+  const gerencial=USERS.map(function(u){return{id:u.id,email:u.email,senha:u.senha||SEED_SENHA_TEMP_GERENCIAL};});
+  const motoboy=EQUIPE.map(function(e){return{nome:e.nome,senha:e.senha||SEED_SENHA_TEMP_MOTOBOY};});
   return relayCall({appKey:RELAY_KEY,action:'updateCredentials',tipo:'seed',gerencial:gerencial,motoboy:motoboy});
 }
 
@@ -2274,53 +2281,68 @@ function motoboySenhaChanged(idx,novaSenha){
 }
 
 // SALVAR — via relay (sem token no app)
-function syncToGist(){
-  gistStatus('Salvando na nuvem...');
-  fetch(RELAY_URL,{
-    method:'POST',
-    redirect:'follow',
-    headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify({appKey:RELAY_KEY,data:buildSyncPayload()})
-  }).then(function(r){return r.json();})
-  .then(function(res){
-    if(res.ok){
-      gistStatus('Salvo '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
-    }else{
-      gistStatus('Erro: '+res.error,true);
-    }
-  }).catch(function(e){
-    gistStatus('Falha na conexão',true);
+// Versão GET do relayCall — mesma robustez (timeout, JSON inválido nunca quebra o app)
+function relayGet(timeoutMs){
+  timeoutMs=timeoutMs||10000;
+  return new Promise(function(resolve){
+    let settled=false;
+    const timer=setTimeout(function(){
+      if(settled)return;
+      settled=true;
+      resolve({ok:false,error:'Tempo esgotado ao buscar dados.'});
+    },timeoutMs);
+
+    fetch(RELAY_URL,{redirect:'follow'}).then(function(r){return r.text();})
+    .then(function(txt){
+      if(settled)return;
+      settled=true;clearTimeout(timer);
+      let res;
+      try{res=JSON.parse(txt);}catch(e){resolve({ok:false,error:'Resposta inválida do servidor'});return;}
+      if(!res||typeof res!=='object'){resolve({ok:false,error:'Resposta inválida do servidor'});return;}
+      resolve(res);
+    }).catch(function(){
+      if(settled)return;
+      settled=true;clearTimeout(timer);
+      resolve({ok:false,error:'Sem conexão com o servidor'});
+    });
   });
 }
 
-// CARREGAR — leitura direta do Gist (sem token, é público)
+function syncToGist(){
+  gistStatus('Salvando na nuvem...');
+  relayCall({appKey:RELAY_KEY,data:buildSyncPayload()}).then(function(res){
+    if(res.ok){
+      gistStatus('Salvo '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+    }else{
+      gistStatus('Erro: '+(res.error||'desconhecido'),true);
+      console.warn('Falha ao salvar na nuvem:',res.error);
+    }
+  });
+}
+
+// CARREGAR — leitura via relay (funciona com Gist público ou privado)
 function loadFromGist(){
   gistStatus('Carregando da nuvem...');
-  fetch(RELAY_URL,{redirect:'follow'})
-  .then(function(r){return r.json();})
-  .then(function(res){
-    if(!res.ok)throw new Error(res.error||'Erro desconhecido');
+  relayGet().then(function(res){
+    if(!res.ok){gistStatus('Erro ao carregar: '+(res.error||'desconhecido'),true);return;}
     if(!res.data){gistStatus('Nenhum dado salvo ainda');return;}
     applyCloudData(res.data);
     gistStatus('Atualizado da nuvem');
     closeAll();buildCarousel();renderCk();
-  }).catch(function(e){
-    gistStatus('Erro ao carregar: '+e.message,true);
   });
 }
 
 // Leitura automática ao abrir — usa o relay (que tem o token guardado)
 // funciona com Gist público ou privado, em qualquer dispositivo
 function bootSync(){
-  fetch(RELAY_URL,{redirect:'follow'})
-  .then(function(r){return r.json();})
-  .then(function(res){
-    if(!res.ok||!res.data)return;
+  relayGet().then(function(res){
+    if(!res.ok||!res.data){
+      if(!res.ok)console.warn('Boot sync falhou:',res.error);
+      return;
+    }
     applyCloudData(res.data);
     if(!res.data.HIST||!Object.keys(res.data.HIST).length)snapshotHistorico();
     buildCarousel();updateBanner();renderCk();
-  }).catch(function(e){
-    console.warn('Boot sync falhou:',e.message);
   });
 }
 
@@ -2342,18 +2364,16 @@ function startAutoRefresh(){
     // não recarrega se algum sheet/edição está aberto
     if(document.querySelector('.sheet.open'))return;
     if(document.querySelector('[contenteditable="true"]'))return;
-    fetch(RELAY_URL,{redirect:'follow'})
-      .then(function(r){return r.json();})
-      .then(function(res){
-        if(!res.ok||!res.data)return;
-        var stamp=res.data.salvoEm||0;
-        if(stamp&&stamp!==lastCloudStamp){
-          lastCloudStamp=stamp;
-          applyCloudData(res.data);
-          buildCarousel();updateBanner();renderCk();
-        }
-      })
-      .catch(function(){});
+    relayGet().then(function(res){
+      if(!res.ok){console.warn('Auto-refresh falhou:',res.error);return;}
+      if(!res.data)return;
+      var stamp=res.data.salvoEm||0;
+      if(stamp&&stamp!==lastCloudStamp){
+        lastCloudStamp=stamp;
+        applyCloudData(res.data);
+        buildCarousel();updateBanner();renderCk();
+      }
+    });
   },25000);
 }
 
