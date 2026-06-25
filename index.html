@@ -14,16 +14,60 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0A0A0A;--bg2:#141414;--bg3:#1C1C1C;--bg4:#242424;
-  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
-  --text:#F0EFEB;--text2:#888884;--text3:#444441;
-  --accent:#FF5C00;--accent-dim:rgba(255,92,0,0.12);
-  --s-conf-bg:#0D2E14;--s-conf:#4AE870;
-  --s-ag-bg:#2C2000;--s-ag:#F5C842;
-  --s-cfm-bg:#1C1C1C;--s-cfm:#666663;
-  --s-ind-bg:#2E0D0D;--s-ind:#FF5C5C;
-  --s-res-bg:#0A2A1E;--s-res:#5EE8A0;
+  /* TEMA CLARO (padrão) */
+  --bg:#F6F4EF;--bg2:#FFFFFF;--bg3:#EFECE4;--bg4:#E5E1D6;
+  --border:rgba(20,18,14,0.08);--border2:rgba(20,18,14,0.15);
+  --text:#211D17;--text2:#6B6860;--text3:#A19D92;
+  --accent:#E8540A;--accent-dim:rgba(232,84,10,0.10);
+  --s-conf-bg:#E5F3E6;--s-conf:#1F9D55;
+  --s-ag-bg:#FBF1DC;--s-ag:#B9790A;
+  --s-cfm-bg:#EFECE4;--s-cfm:#8A8678;
+  --s-ind-bg:#FBEAE8;--s-ind:#D6433F;
+  --s-res-bg:#E2F5EC;--s-res:#159165;
   --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;
+  --blur-bg:rgba(255,253,250,0.78);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#15130F;--bg2:#1D1B16;--bg3:#262420;--bg4:#302E28;
+    --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+    --text:#F2EFE9;--text2:#928E82;--text3:#54514A;
+    --accent:#FF6B1A;--accent-dim:rgba(255,107,26,0.14);
+    --s-conf-bg:#13301D;--s-conf:#4AE88B;
+    --s-ag-bg:#332306;--s-ag:#F5BD42;
+    --s-cfm-bg:#262420;--s-cfm:#6B6660;
+    --s-ind-bg:#341212;--s-ind:#FF6B68;
+    --s-res-bg:#0F2E22;--s-res:#3DDE9C;
+    --blur-bg:rgba(21,19,15,0.75);
+    color-scheme:dark;
+  }
+}
+body[data-theme="light"]{
+  --bg:#F6F4EF;--bg2:#FFFFFF;--bg3:#EFECE4;--bg4:#E5E1D6;
+  --border:rgba(20,18,14,0.08);--border2:rgba(20,18,14,0.15);
+  --text:#211D17;--text2:#6B6860;--text3:#A19D92;
+  --accent:#E8540A;--accent-dim:rgba(232,84,10,0.10);
+  --s-conf-bg:#E5F3E6;--s-conf:#1F9D55;
+  --s-ag-bg:#FBF1DC;--s-ag:#B9790A;
+  --s-cfm-bg:#EFECE4;--s-cfm:#8A8678;
+  --s-ind-bg:#FBEAE8;--s-ind:#D6433F;
+  --s-res-bg:#E2F5EC;--s-res:#159165;
+  --blur-bg:rgba(255,253,250,0.78);
+  color-scheme:light;
+}
+body[data-theme="dark"]{
+  --bg:#15130F;--bg2:#1D1B16;--bg3:#262420;--bg4:#302E28;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#F2EFE9;--text2:#928E82;--text3:#54514A;
+  --accent:#FF6B1A;--accent-dim:rgba(255,107,26,0.14);
+  --s-conf-bg:#13301D;--s-conf:#4AE88B;
+  --s-ag-bg:#332306;--s-ag:#F5BD42;
+  --s-cfm-bg:#262420;--s-cfm:#6B6660;
+  --s-ind-bg:#341212;--s-ind:#FF6B68;
+  --s-res-bg:#0F2E22;--s-res:#3DDE9C;
+  --blur-bg:rgba(21,19,15,0.75);
+  color-scheme:dark;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 .topbar{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between}
@@ -44,7 +88,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .event-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .event-text{font-size:12px;color:var(--accent);font-weight:500;flex:1}
-.panel{display:none;padding-bottom:80px}
+.panel{display:none;padding-bottom:100px}
 .panel.active{display:block}
 .day-strip-wrap{position:sticky;top:53px;z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:8px 14px 7px}
 .day-strip{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none}
@@ -59,18 +103,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .carousel-wrap{overflow:hidden}
 .carousel-track{display:flex;transition:transform .3s cubic-bezier(.4,0,.2,1)}
 .carousel-slide{min-width:100%;padding:12px 12px 0;flex-shrink:0}
-.turno-card{background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--r-lg);margin-bottom:10px;overflow:hidden;transition:border-color .2s,box-shadow .2s}
-.turno-card.tcard-bad{border-color:rgba(255,92,92,.55);box-shadow:0 0 0 1px rgba(255,92,92,.15),0 0 18px rgba(255,92,92,.08)}
-.turno-card.tcard-warn{border-color:rgba(245,200,66,.5);box-shadow:0 0 0 1px rgba(245,200,66,.12)}
-.turno-card.tcard-ok{border-color:rgba(74,232,112,.5);box-shadow:0 0 0 1px rgba(74,232,112,.12)}
-.turno-head{display:flex;align-items:center;justify-content:space-between;padding:10px 13px 10px 17px;background:var(--bg3);border-bottom:1px solid var(--border);gap:8px;position:relative}
-.turno-head.thead-bad{background:linear-gradient(135deg,rgba(255,92,92,.14),rgba(255,92,92,.05))}
-.turno-head.thead-warn{background:linear-gradient(135deg,rgba(245,200,66,.12),rgba(245,200,66,.04))}
-.turno-head.thead-ok{background:linear-gradient(135deg,rgba(74,232,112,.14),rgba(74,232,112,.05))}
-.status-strip{position:absolute;left:0;top:0;bottom:0;width:4px}
-.status-strip.bad{background:var(--s-ind)}
-.status-strip.warn{background:var(--s-ag)}
-.status-strip.ok{background:var(--s-conf)}
+.turno-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.turno-card.tcard-bad{border-color:var(--s-ind)}
+.turno-card.tcard-warn{border-color:var(--s-ag)}
+.turno-card.tcard-ok{border-color:var(--border)}
+.turno-head{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:var(--bg2);border-bottom:1px solid var(--border);gap:8px}
+.turno-head.thead-bad,.turno-head.thead-warn,.turno-head.thead-ok{background:var(--bg2)}
+.status-strip{display:none}
 .t-count-icon{font-size:11px;margin-right:3px}
 .turno-left{display:flex;align-items:center;gap:9px;min-width:0}
 .turno-icon{font-size:16px;line-height:1;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--accent)}
@@ -301,28 +340,52 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .login-error{font-size:12px;color:var(--s-ind);min-height:16px;margin-top:8px;text-align:center}
 .login-submit{width:100%;padding:13px;border:none;border-radius:var(--r-md);background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;font-family:inherit}
 .login-submit:active{opacity:.85}
-.bnav{position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--bg2);border-top:1px solid var(--border);display:flex;padding:7px 0 20px}
-.bnav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;cursor:pointer;border:none;background:transparent;color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.02em;transition:color .15s}
 .bnav-tab svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .bnav-tab.active{color:var(--accent)}
 
-/* ═══ MODO PC (desktop) — ativado via classe no body ═══ */
-body.pc-mode{max-width:1100px;margin:0 auto;background:var(--bg)}
-body.pc-mode .topbar{padding:16px 28px 14px}
-body.pc-mode .topbar-name{font-size:18px}
-body.pc-mode .carousel-wrap{overflow:visible}
-/* No PC, mostra hoje + amanhã lado a lado: cada slide ocupa metade */
-body.pc-mode .carousel-track{transform:none!important;flex-wrap:nowrap;gap:18px;padding:0 18px}
-body.pc-mode .carousel-slide{min-width:0;width:50%;flex:1 1 50%;padding:14px 0 0}
-/* esconde do 3º dia em diante no modo PC (só hoje e amanhã) */
-body.pc-mode .carousel-slide:nth-child(n+3){display:none}
-body.pc-mode .day-strip-wrap{display:none}
-body.pc-mode .pc-day-header{display:block;font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-body.pc-mode .ev-list,body.pc-mode .eq-panel,body.pc-mode .ck-panel{max-width:720px;margin:0 auto}
-body.pc-mode .bnav{max-width:1100px;margin:0 auto;padding:10px 0 14px}
-body.pc-mode .turno-card{margin-bottom:12px}
-.pc-day-header{display:none}
-.viewmode-active{color:var(--accent)!important}
+/* ═══ TEMA: transição suave ao trocar claro/escuro ═══ */
+body,.topbar,.bnav,.sheet,.turno-card,.mb-card,.ck-card,.sidebar{transition:background-color .25s ease,border-color .25s ease,color .25s ease}
+
+/* ═══ BARRA INFERIOR ESTILO iOS — flutuante, com efeito de vidro (mobile) ═══ */
+.bnav{
+  position:fixed;left:14px;right:14px;bottom:14px;z-index:100;
+  display:flex;justify-content:space-around;align-items:center;
+  background:var(--blur-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:0.5px solid var(--border2);border-radius:24px;
+  padding:9px 6px;box-shadow:0 8px 28px rgba(0,0,0,0.16);
+}
+.bnav-tab{
+  position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 4px;cursor:pointer;border:none;background:transparent;border-radius:16px;
+  color:var(--text3);font-size:9px;font-weight:600;letter-spacing:.02em;
+  transition:color .15s,background .15s;font-family:inherit;
+}
+.nav-badge{position:absolute;top:2px;right:18%;width:7px;height:7px;border-radius:50%;background:var(--s-ind);border:1.5px solid var(--bg2)}
+.sidebar-nav-item .nav-badge{top:6px;right:10px;border-color:var(--bg2)}
+
+/* ═══ GAVETA LATERAL — só aparece em telas largas (desktop), via JS auto-detect ═══ */
+.sidebar{
+  display:none;position:fixed;left:0;top:0;bottom:0;width:216px;
+  background:var(--bg2);border-right:0.5px solid var(--border);
+  flex-direction:column;padding:18px 14px;z-index:90;
+}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding:6px 10px 22px;font-size:15px;font-weight:600;color:var(--text)}
+.sidebar-brand .topbar-logo-img{width:28px;height:28px}
+.sidebar-nav{display:flex;flex-direction:column;gap:3px;flex:1}
+.sidebar-nav-item{position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--r-md);border:none;background:transparent;color:var(--text2);font-size:13.5px;font-weight:500;cursor:pointer;font-family:inherit;text-align:left;width:100%}
+.sidebar-nav-item svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.sidebar-nav-item.active{background:var(--accent-dim);color:var(--accent)}
+.sidebar-nav-item:not(.active):hover{background:var(--bg3)}
+.sidebar-foot{display:flex;gap:6px;padding-top:10px;border-top:0.5px solid var(--border)}
+
+/* ═══ MODO DESKTOP — ativado automaticamente via JS (matchMedia), não manualmente ═══ */
+body.desktop-mode .topbar{display:none}
+body.desktop-mode .sidebar{display:flex}
+body.desktop-mode .bnav{display:none}
+body.desktop-mode .panel{margin-left:216px;padding:32px 28px 60px;max-width:680px}
+body.desktop-mode #panel-turnos{padding-top:32px}
+body.desktop-mode .carousel-wrap{overflow:visible}
+body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -368,8 +431,9 @@ body.pc-mode .turno-card{margin-bottom:12px}
     </div>
   </div>
   <div class="topbar-right">
-    <div class="icon-btn" id="btn-viewmode" onclick="toggleViewMode()" title="Alternar Mobile / PC">
-      <svg viewBox="0 0 24 24" id="viewmode-icon"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    <div class="icon-btn" id="btn-theme" onclick="toggleTheme()" title="Tema">
+      <svg viewBox="0 0 24 24" id="theme-icon-sun" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg viewBox="0 0 24 24" id="theme-icon-moon" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
     </div>
     <div class="icon-btn" id="btn-backups" onclick="openSheet('bk-sheet')" title="Backups">
       <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
@@ -382,6 +446,27 @@ body.pc-mode .turno-card{margin-bottom:12px}
     </div>
   </div>
 </div>
+
+<!-- Gaveta lateral — aparece automaticamente em telas largas (desktop), substitui a barra inferior -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="topbar-logo-img" id="sidebar-logo-slot"></div>
+    <span>+TURNOS</span>
+  </div>
+  <div class="sidebar-nav" id="sidebar-nav"></div>
+  <div class="sidebar-foot">
+    <button class="icon-btn" onclick="toggleTheme()" title="Tema">
+      <svg viewBox="0 0 24 24" id="theme-icon-sun-sb" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg viewBox="0 0 24 24" id="theme-icon-moon-sb" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+    <button class="icon-btn" onclick="openSheet('cfg-sheet')" title="Config">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <button class="icon-btn" onclick="doLogout()" title="Sair">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+</nav>
 
 <div class="event-banner" id="event-banner" style="display:none" onclick="setPanel('ev',document.querySelector('[data-panel=ev]'))">
   <span class="event-dot"></span>
@@ -522,18 +607,6 @@ body.pc-mode .turno-card{margin-bottom:12px}
   <button class="sh-btn sh-btn-p" onclick="salvarTarefaCk()">Salvar tarefa</button>
 </div>
 
-<div class="jogo-alert-box" id="ck-popup" style="display:none;position:fixed;left:16px;right:16px;bottom:90px;z-index:300;background:var(--bg2);border:1px solid var(--accent);box-shadow:0 8px 24px rgba(0,0,0,.3)">
-  <div class="jogo-alert-icon" style="background:var(--accent-dim)">
-    <svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-  </div>
-  <div class="jogo-alert-text">
-    <b>Hora da tarefa</b> — <span id="ck-popup-titulo"></span>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="sh-btn sh-btn-s" style="margin:0;padding:7px 12px;font-size:11px;flex:none" onclick="concluirPopupCk()">Marcar concluído</button>
-      <button class="sh-btn sh-btn-s" style="margin:0;padding:7px 12px;font-size:11px;flex:none" onclick="dispensarPopupCk()">Dispensar</button>
-    </div>
-  </div>
-</div>
 
 <div class="sheet" id="bk-sheet">
   <div class="sheet-handle"></div>
@@ -1064,14 +1137,7 @@ function buildCarousel(){
     track.appendChild(slide);
   });
 
-  if(pcMode){
-    // renderiza hoje e amanhã (os dois primeiros), já que ficam lado a lado
-    renderSlide(DAY_ORDER[0]);
-    if(DAY_ORDER[1])renderSlide(DAY_ORDER[1]);
-    addPcDayHeaders();
-  }else{
-    goDay(curDayIdx,false);
-  }
+  goDay(curDayIdx,false);
 }
 
 function goDay(idx,animate){
@@ -1111,7 +1177,7 @@ function renderSlide(day){
     const sugs=vagas>0?getSugs(day,t.id):[];
     const tStatus=turnoStatus(conf,t.min);
 
-    html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="status-strip '+tStatus+'"></div><div class="turno-left"><span class="turno-icon">'+turnoIconSvg(t.id)+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+' . min. '+t.min+'</div></div></div>'+countBadge(conf,t.min)+'</div>';
+    html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="turno-left"><span class="turno-icon">'+turnoIconSvg(t.id)+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+'</div></div></div>'+countBadge(conf,t.min)+'</div>';
 
     td.mbs.forEach(function(mb,idx){
       const eq=EQUIPE.find(function(x){return x.nome===mb.nome});
@@ -1625,6 +1691,7 @@ function marcarConcluidoCk(idx){
   c.concluidoPor=nomeQuemMarcou();
   saveBackup('Tarefa "'+c.titulo+'" concluída');
   renderCk();
+  updateCkBadge();
 }
 
 function desmarcarConcluidoCk(idx){
@@ -1632,6 +1699,7 @@ function desmarcarConcluidoCk(idx){
   c.concluidoHoje=false;c.concluidoEm=null;c.concluidoPor=null;c.descricaoConcluido=null;
   saveBackup('Tarefa "'+c.titulo+'" reaberta');
   renderCk();
+  updateCkBadge();
 }
 
 // Reset diário do checklist — chamado pelo schedMidnight()
@@ -1639,6 +1707,7 @@ function ckMidnightReset(){
   CKS.forEach(function(c){
     c.concluidoHoje=false;c.concluidoEm=null;c.concluidoPor=null;c.descricaoConcluido=null;c.notificadoHoje=false;
   });
+  updateCkBadge();
 }
 
 // Notificações + popup no horário agendado
@@ -1673,30 +1742,32 @@ function verificarTarefasAgendadas(){
       dispararNotificacaoCk(c,idx);
     }
   });
+  updateCkBadge();
 }
 
 function dispararNotificacaoCk(c,idx){
   if('Notification' in window&&Notification.permission==='granted'){
     try{new Notification('Hora da tarefa: '+c.titulo,{body:'Toque pra abrir o checklist'});}catch(e){}
   }
-  mostrarPopupCk(idx);
+  updateCkBadge();
 }
 
-let ckPopupIdx=-1;
-function mostrarPopupCk(idx){
-  const c=CKS[idx];if(!c)return;
-  ckPopupIdx=idx;
-  document.getElementById('ck-popup-titulo').textContent=c.titulo;
-  document.getElementById('ck-popup').style.display='flex';
-}
-function concluirPopupCk(){
-  if(ckPopupIdx>-1)marcarConcluidoCk(ckPopupIdx);
-  document.getElementById('ck-popup').style.display='none';
-  ckPopupIdx=-1;
-}
-function dispensarPopupCk(){
-  document.getElementById('ck-popup').style.display='none';
-  ckPopupIdx=-1;
+// Indicador discreto (bolinha) na aba Checklists — em vez de interromper a tela com um popup,
+// só avisa visualmente que tem algo pendente. A pessoa abre a aba quando quiser.
+function updateCkBadge(){
+  const agora=new Date();
+  const horaAtual=String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0');
+  const pendente=CKS.some(function(c){
+    return c.ativo&&!c.concluidoHoje&&c.horario&&horaAtual>=c.horario;
+  });
+  document.querySelectorAll('[data-panel="ck"] .nav-badge').forEach(function(b){b.remove()});
+  if(!pendente)return;
+  document.querySelectorAll('[data-panel="ck"]').forEach(function(tab){
+    const dot=document.createElement('span');
+    dot.className='nav-badge';
+    tab.style.position=tab.style.position||'relative';
+    tab.appendChild(dot);
+  });
 }
 
 function renderCfg(){
@@ -1927,49 +1998,79 @@ function applySessionUI(){
     roleLabel.textContent='Motoboy — '+SESSION.nome;
     document.getElementById('btn-config').style.display='none';
     document.getElementById('btn-backups').style.display='none';
-    document.getElementById('btn-viewmode').style.display='none';
-    // motoboy nunca usa modo PC
-    document.body.classList.remove('pc-mode');
   }else{
     const u=USERS.find(function(x){return x.id===SESSION.userId});
     roleLabel.textContent=u?u.role:'Gerente';
     document.getElementById('btn-config').style.display=(u&&u.perms.config)?'':'none';
     document.getElementById('btn-backups').style.display='';
-    document.getElementById('btn-viewmode').style.display='';
   }
   setPanel('turnos',document.querySelector('[data-panel="turnos"]'));
+  applyLayoutMode();
 }
 
-// Alterna entre modo mobile (1 dia) e PC (hoje + amanhã lado a lado)
-let pcMode=false;
-function toggleViewMode(){
-  pcMode=!pcMode;
-  document.body.classList.toggle('pc-mode',pcMode);
-  document.getElementById('btn-viewmode').classList.toggle('viewmode-active',pcMode);
-  if(pcMode){
-    // garante que o carrossel mostre do início (hoje) e injeta cabeçalhos
-    curDayIdx=0;
-    buildCarousel();
-    addPcDayHeaders();
+// ═══ TEMA CLARO/ESCURO — segue o sistema, com opção de trocar manualmente ═══
+function getEffectiveTheme(){
+  const manual=safeGet('turnos_theme');
+  if(manual==='light'||manual==='dark')return manual;
+  return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+}
+function applyTheme(){
+  const manual=safeGet('turnos_theme');
+  if(manual==='light'||manual==='dark'){
+    document.body.setAttribute('data-theme',manual);
   }else{
-    // volta ao modo mobile normal
-    buildCarousel();
+    document.body.removeAttribute('data-theme'); // segue o sistema
   }
+  updateThemeIcons();
+}
+function updateThemeIcons(){
+  const isDark=getEffectiveTheme()==='dark';
+  ['theme-icon-sun','theme-icon-sun-sb'].forEach(function(id){
+    const el=document.getElementById(id);if(el)el.style.display=isDark?'':'none';
+  });
+  ['theme-icon-moon','theme-icon-moon-sb'].forEach(function(id){
+    const el=document.getElementById(id);if(el)el.style.display=isDark?'none':'';
+  });
+}
+function toggleTheme(){
+  const next=getEffectiveTheme()==='dark'?'light':'dark';
+  safeSet('turnos_theme',next);
+  applyTheme();
+}
+if(window.matchMedia){
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){
+    if(!safeGet('turnos_theme'))updateThemeIcons();
+  });
 }
 
-// No modo PC, coloca um cabeçalho "HOJE" / "AMANHÃ" no topo de cada slide visível
-function addPcDayHeaders(){
-  const slides=document.querySelectorAll('.carousel-slide');
-  slides.forEach(function(slide,i){
-    const existing=slide.querySelector('.pc-day-header');
-    if(existing)existing.remove();
-    if(i>1)return; // só hoje e amanhã
-    const lbl=i===0?'Hoje':'Amanhã';
-    const h=document.createElement('div');
-    h.className='pc-day-header';
-    h.textContent=lbl+' · '+DAY_FULL[DAY_ORDER[i]];
-    slide.insertBefore(h,slide.firstChild);
-  });
+// ═══ DESKTOP AUTO-DETECT — troca pra sidebar automaticamente em telas largas ═══
+const DESKTOP_BREAKPOINT='(min-width: 880px)';
+function applyLayoutMode(){
+  const isDesktop=window.matchMedia&&window.matchMedia(DESKTOP_BREAKPOINT).matches;
+  document.body.classList.toggle('desktop-mode',isDesktop);
+  if(isDesktop)populateSidebar();
+}
+if(window.matchMedia){
+  window.matchMedia(DESKTOP_BREAKPOINT).addEventListener('change',applyLayoutMode);
+}
+
+// Espelha os itens da barra inferior na gaveta lateral, mantendo a mesma visibilidade por sessão
+function populateSidebar(){
+  const nav=document.getElementById('sidebar-nav');
+  if(!nav)return;
+  const tabs=document.querySelectorAll('.bnav-tab');
+  nav.innerHTML=Array.from(tabs).map(function(tab){
+    if(tab.style.display==='none')return'';
+    const panel=tab.dataset.panel;
+    const svg=tab.querySelector('svg').outerHTML;
+    const label=tab.textContent.trim();
+    const active=tab.classList.contains('active')?'active':'';
+    return '<button class="sidebar-nav-item '+active+'" data-panel="'+panel+'" onclick="setPanel(\''+panel+'\',this)">'+svg+'<span>'+label+'</span></button>';
+  }).join('');
+  const logoImg=document.querySelector('.topbar-logo-img');
+  const slot=document.getElementById('sidebar-logo-slot');
+  if(logoImg&&slot)slot.outerHTML=logoImg.outerHTML.replace('topbar-logo-img','topbar-logo-img');
+  if(typeof updateCkBadge==='function')updateCkBadge();
 }
 
 function startApp(){
@@ -2031,7 +2132,7 @@ function renderSlideMotoboy(day){
     // Vaga é uma oportunidade positiva pro motoboy — nunca mostra vermelho/amarelo nesse caso pra ele
     if(vagas>0)tStatus='ok';
 
-    html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="status-strip '+tStatus+'"></div><div class="turno-left"><span class="turno-icon">'+turnoIconSvg(t.id)+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+'</div></div></div></div>';
+    html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="turno-left"><span class="turno-icon">'+turnoIconSvg(t.id)+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+'</div></div></div></div>';
 
     if(idx>-1){
       const mb=td.mbs[idx];
@@ -2093,9 +2194,9 @@ function motoboyReservar(day,tid){
 
 function setPanel(id,btn){
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
-  document.querySelectorAll('.bnav-tab').forEach(function(b){b.classList.remove('active')});
+  document.querySelectorAll('.bnav-tab').forEach(function(b){b.classList.toggle('active',b.dataset.panel===id)});
+  document.querySelectorAll('.sidebar-nav-item').forEach(function(b){b.classList.toggle('active',b.dataset.panel===id)});
   document.getElementById('panel-'+id).classList.add('active');
-  if(btn)btn.classList.add('active');
   if(id==='ev')renderEventos();
   if(id==='eq'){renderUsers();renderMbEq();}
   if(id==='ck')renderCk();
@@ -2377,6 +2478,8 @@ function startAutoRefresh(){
   },25000);
 }
 
+applyTheme();
+applyLayoutMode();
 initSch();
 snapshotHistorico();
 populateMotoboySelect();
