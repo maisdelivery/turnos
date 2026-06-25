@@ -78,6 +78,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .topbar-role{font-size:10px;color:var(--text2)}
 .topbar-right{display:flex;gap:8px}
 .icon-btn{width:32px;height:32px;border-radius:var(--r-sm);background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2)}
+.icon-btn.nav-disabled{opacity:.32;pointer-events:none}
 .icon-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .event-banner{background:var(--accent-dim);border-bottom:1px solid rgba(255,92,0,.2);padding:8px 16px;display:flex;align-items:center;gap:8px;cursor:pointer}
 .jogo-alert-box{background:rgba(74,232,112,.1);border:1px solid rgba(74,232,112,.3);border-radius:var(--r-md);padding:12px 14px;margin:0 16px 12px;display:flex;align-items:center;gap:10px}
@@ -431,6 +432,12 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
     </div>
   </div>
   <div class="topbar-right">
+    <button class="icon-btn btn-undo nav-disabled" onclick="desfazer()" title="Desfazer">
+      <svg viewBox="0 0 24 24"><path d="M3 10h10a5 5 0 0 1 0 10H8"/><polyline points="7 5 3 10 7 15"/></svg>
+    </button>
+    <button class="icon-btn btn-redo nav-disabled" onclick="refazer()" title="Refazer">
+      <svg viewBox="0 0 24 24"><path d="M21 10H11a5 5 0 0 0 0 10h5"/><polyline points="17 5 21 10 17 15"/></svg>
+    </button>
     <div class="icon-btn" id="btn-theme" onclick="toggleTheme()" title="Tema">
       <svg viewBox="0 0 24 24" id="theme-icon-sun" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       <svg viewBox="0 0 24 24" id="theme-icon-moon" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -455,6 +462,12 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
   </div>
   <div class="sidebar-nav" id="sidebar-nav"></div>
   <div class="sidebar-foot">
+    <button class="icon-btn btn-undo nav-disabled" onclick="desfazer()" title="Desfazer">
+      <svg viewBox="0 0 24 24"><path d="M3 10h10a5 5 0 0 1 0 10H8"/><polyline points="7 5 3 10 7 15"/></svg>
+    </button>
+    <button class="icon-btn btn-redo nav-disabled" onclick="refazer()" title="Refazer">
+      <svg viewBox="0 0 24 24"><path d="M21 10H11a5 5 0 0 0 0 10h5"/><polyline points="17 5 21 10 17 15"/></svg>
+    </button>
     <button class="icon-btn" onclick="toggleTheme()" title="Tema">
       <svg viewBox="0 0 24 24" id="theme-icon-sun-sb" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       <svg viewBox="0 0 24 24" id="theme-icon-moon-sb" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -891,9 +904,92 @@ function saveBackup(motivo){
     if(bks.length>MAX_BK)bks.length=MAX_BK;
     safeSet(BK_KEY,JSON.stringify(bks));
     flashBackupDot();
+    pushHistory();
     if(typeof autoSync==='function')autoSync();
   }catch(e){console.warn('Backup failed:',e)}
 }
+
+// ═══ DESFAZER / REFAZER ═══
+// Toda chamada a saveBackup() (já usada em praticamente toda ação do app)
+// empilha um retrato completo do estado. Desfazer/refazer troca entre eles.
+// Construído pra nunca travar o app: se algo der errado ao restaurar um
+// retrato (JSON corrompido, etc.), o ponteiro volta pro lugar e nada quebra.
+let HISTORY=[];
+let HISTORY_PTR=-1;
+const MAX_HISTORY=25;
+let undoRedoBusy=false; // evita cliques duplos disparando duas restaurações ao mesmo tempo
+
+function captureFullState(){
+  try{
+    return JSON.stringify({SCH:SCH,CFG:CFG,EQUIPE:EQUIPE,USERS:USERS,BAGS:BAGS,
+      EVENTOS_LOCAIS:EVENTOS_LOCAIS,CKS:CKS,HIST:HIST,MSGS:MSGS});
+  }catch(e){console.warn('Falha ao capturar estado para undo:',e);return null;}
+}
+
+function pushHistory(){
+  const snap=captureFullState();
+  if(!snap)return; // nao quebra o app, so nao alimenta o undo dessa vez
+  if(HISTORY_PTR<HISTORY.length-1)HISTORY.length=HISTORY_PTR+1; // descarta "futuro" invalidado
+  HISTORY.push(snap);
+  if(HISTORY.length>MAX_HISTORY)HISTORY.shift();
+  HISTORY_PTR=HISTORY.length-1;
+  updateUndoRedoButtons();
+}
+
+function applyFullState(snapshotJson){
+  try{
+    const s=JSON.parse(snapshotJson);
+    if(!s||typeof s!=='object')return false;
+    SCH=s.SCH;CFG=s.CFG;EQUIPE=s.EQUIPE;USERS=s.USERS;BAGS=s.BAGS;
+    EVENTOS_LOCAIS=s.EVENTOS_LOCAIS;CKS=s.CKS;HIST=s.HIST;MSGS=s.MSGS;
+    return true;
+  }catch(e){console.warn('Falha ao restaurar estado:',e);return false;}
+}
+
+function podeDesfazer(){return HISTORY_PTR>0;}
+function podeRefazer(){return HISTORY_PTR<HISTORY.length-1;}
+
+function rerenderAposUndo(){
+  buildCarousel();updateBanner();renderCk();updateCkBadge();
+  const eqAtivo=document.getElementById('panel-eq');
+  if(eqAtivo&&eqAtivo.classList.contains('active')){renderUsers();renderMbEq();}
+  const evAtivo=document.getElementById('panel-ev');
+  if(evAtivo&&evAtivo.classList.contains('active'))renderEventos();
+  const contaAtivo=document.getElementById('panel-conta');
+  if(contaAtivo&&contaAtivo.classList.contains('active'))renderConta();
+}
+
+function desfazer(){
+  if(undoRedoBusy||!podeDesfazer())return;
+  undoRedoBusy=true;
+  const novoPtr=HISTORY_PTR-1;
+  if(applyFullState(HISTORY[novoPtr])){
+    HISTORY_PTR=novoPtr;
+    rerenderAposUndo();
+    if(typeof autoSync==='function')autoSync(); // propaga a correção pra nuvem também
+  }
+  updateUndoRedoButtons();
+  undoRedoBusy=false;
+}
+
+function refazer(){
+  if(undoRedoBusy||!podeRefazer())return;
+  undoRedoBusy=true;
+  const novoPtr=HISTORY_PTR+1;
+  if(applyFullState(HISTORY[novoPtr])){
+    HISTORY_PTR=novoPtr;
+    rerenderAposUndo();
+    if(typeof autoSync==='function')autoSync();
+  }
+  updateUndoRedoButtons();
+  undoRedoBusy=false;
+}
+
+function updateUndoRedoButtons(){
+  document.querySelectorAll('.btn-undo').forEach(function(b){b.classList.toggle('nav-disabled',!podeDesfazer());});
+  document.querySelectorAll('.btn-redo').forEach(function(b){b.classList.toggle('nav-disabled',!podeRefazer());});
+}
+
 
 function flashBackupDot(){
   const dot=document.getElementById('bk-dot');
@@ -2079,6 +2175,7 @@ function startApp(){
   applySessionUI();
   buildCarousel();
   startCkChecker();
+  updateUndoRedoButtons();
 }
 
 function tryAutoLogin(){
@@ -2439,11 +2536,14 @@ function bootSync(){
   relayGet().then(function(res){
     if(!res.ok||!res.data){
       if(!res.ok)console.warn('Boot sync falhou:',res.error);
+      pushHistory(); // mesmo sem nuvem, guarda o estado padrão como ponto de partida
       return;
     }
     applyCloudData(res.data);
     if(!res.data.HIST||!Object.keys(res.data.HIST).length)snapshotHistorico();
     buildCarousel();updateBanner();renderCk();
+    HISTORY=[];HISTORY_PTR=-1; // reseta o undo: começa do estado recém-carregado da nuvem
+    pushHistory();
   });
 }
 
