@@ -1825,6 +1825,7 @@ function startCkChecker(){
 }
 
 function verificarTarefasAgendadas(){
+  if(!cloudDataLoaded)return; // proteção extra: nunca roda antes dos dados reais da nuvem chegarem
   if(!SESSION||SESSION.kind!=='gerencial')return; // checklist é só pra equipe gerencial
   const agora=new Date();
   const horaAtual=String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0');
@@ -1833,8 +1834,7 @@ function verificarTarefasAgendadas(){
     if(horaAtual>=c.horario){
       const souODestinatario=!c.atribuidoA||SESSION.userId===c.atribuidoA;
       if(!souODestinatario)return;
-      c.notificadoHoje=true;
-      saveBackup('Notificação disparada: '+c.titulo);
+      c.notificadoHoje=true; // só marca localmente — não dispara salvamento completo da escala por isso
       dispararNotificacaoCk(c,idx);
     }
   });
@@ -1945,15 +1945,23 @@ function initSwipe(){
 function schedMidnight(){
   const now=new Date();
   const mn=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);
-  setTimeout(function(){
-    const ontem=JS_DAYS[new Date(Date.now()-86400000).getDay()];
-    saveBackup('Reset automatico meia-noite');
-    Object.values(SCH[ontem]||{}).forEach(function(t){
-      t.mbs.forEach(function(mb){if(['Confirmado','Aguardando','Reserva'].indexOf(mb.status)>-1)mb.status='Confirmar'});
-    });
-    ckMidnightReset();
-    buildCarousel();renderCk();schedMidnight();
-  },mn-now);
+  setTimeout(executarResetMeiaNoite,mn-now);
+}
+
+function executarResetMeiaNoite(){
+  if(!cloudDataLoaded){
+    // ainda não confirmou os dados reais da nuvem — espera um pouco e tenta de novo,
+    // nunca reseta com base em dados que podem estar desatualizados
+    setTimeout(executarResetMeiaNoite,3000);
+    return;
+  }
+  const ontem=JS_DAYS[new Date(Date.now()-86400000).getDay()];
+  Object.values(SCH[ontem]||{}).forEach(function(t){
+    t.mbs.forEach(function(mb){if(['Confirmado','Aguardando','Reserva'].indexOf(mb.status)>-1)mb.status='Confirmar'});
+  });
+  ckMidnightReset();
+  saveBackup('Reset automatico meia-noite');
+  buildCarousel();renderCk();schedMidnight();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2174,7 +2182,6 @@ function startApp(){
   document.getElementById('app-root').style.display='block';
   applySessionUI();
   buildCarousel();
-  startCkChecker();
   updateUndoRedoButtons();
 }
 
@@ -2532,18 +2539,25 @@ function loadFromGist(){
 
 // Leitura automática ao abrir — usa o relay (que tem o token guardado)
 // funciona com Gist público ou privado, em qualquer dispositivo
+//
+// IMPORTANTE: nenhuma ação automática (checklist, etc.) pode rodar antes
+// dessa busca terminar — senão corre o risco de salvar o "esqueleto" padrão
+// por engano e sobrescrever a escala real na nuvem (bug já visto e corrigido).
+let cloudDataLoaded=false;
 function bootSync(){
   relayGet().then(function(res){
     if(!res.ok||!res.data){
       if(!res.ok)console.warn('Boot sync falhou:',res.error);
       pushHistory(); // mesmo sem nuvem, guarda o estado padrão como ponto de partida
-      return;
+    }else{
+      applyCloudData(res.data);
+      if(!res.data.HIST||!Object.keys(res.data.HIST).length)snapshotHistorico();
+      buildCarousel();updateBanner();renderCk();
+      HISTORY=[];HISTORY_PTR=-1; // reseta o undo: começa do estado recém-carregado da nuvem
+      pushHistory();
     }
-    applyCloudData(res.data);
-    if(!res.data.HIST||!Object.keys(res.data.HIST).length)snapshotHistorico();
-    buildCarousel();updateBanner();renderCk();
-    HISTORY=[];HISTORY_PTR=-1; // reseta o undo: começa do estado recém-carregado da nuvem
-    pushHistory();
+    cloudDataLoaded=true;
+    startCkChecker(); // só inicia o verificador de tarefas agora, com dados confirmados
   });
 }
 
@@ -2587,7 +2601,6 @@ if(tryAutoLogin()){
   document.getElementById('login-gate').style.display='none';
   document.getElementById('app-root').style.display='block';
   applySessionUI();
-  startCkChecker();
 }
 buildCarousel();
 updateBanner();
