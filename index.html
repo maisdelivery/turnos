@@ -92,6 +92,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .panel{display:none;padding-bottom:100px}
 .panel.active{display:block}
 .day-strip-wrap{position:sticky;top:53px;z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:8px 14px 7px}
+.day-strip-row{display:flex;align-items:center;gap:6px}
+.week-nav-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s}
+.week-nav-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.week-nav-btn.semana-passada-ativa{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.semana-label{font-size:9px;font-weight:700;color:var(--accent);white-space:nowrap;letter-spacing:.04em;text-transform:uppercase}
 .day-strip{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none}
 .day-strip::-webkit-scrollbar{display:none}
 .day-btn{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);white-space:nowrap;transition:all .15s;line-height:1}
@@ -489,7 +494,15 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
 
 <div id="panel-turnos" class="panel active">
   <div id="jogo-alert" style="display:none"></div>
-  <div class="day-strip-wrap"><div class="day-strip" id="day-strip"></div></div>
+  <div class="day-strip-wrap">
+    <div class="day-strip-row">
+      <button class="week-nav-btn" id="btn-semana-passada" onclick="toggleSemanaPassada()" title="Semana passada">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div class="day-strip" id="day-strip"></div>
+      <span class="semana-label" id="semana-label" style="display:none">Semana passada</span>
+    </div>
+  </div>
   <div class="carousel-wrap"><div class="carousel-track" id="carousel-track"></div></div>
 </div>
 
@@ -652,6 +665,10 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
       <button class="sh-btn sh-btn-s" style="flex:1;margin:0;padding:9px" onclick="syncToGist()">Forçar salvamento</button>
       <button class="sh-btn sh-btn-s" style="flex:1;margin:0;padding:9px" onclick="loadFromGist()">Recarregar da nuvem</button>
     </div>
+    <button class="sh-btn sh-btn-s" style="width:100%;margin-top:8px;padding:9px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="enviarRelatorioWhatsApp()">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Enviar relatório semanal no WhatsApp
+    </button>
     <div id="gist-status" style="font-size:11px;color:var(--text2);text-align:center;margin-top:8px;min-height:14px"></div>
   </div>
 
@@ -721,6 +738,37 @@ const DAY_ORDER=(function(){
   return arr;
 })();
 let curDayIdx=0; // sempre abre em hoje (primeiro da ordem)
+let vendoSemanaPassada=false;
+
+// Retorna a data real (Date) correspondente a um dayKey na semana atual ou passada
+function dateForDayKey(dayKey, semanaOffset){
+  semanaOffset=semanaOffset||0;
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  const todayJsDay=today.getDay(); // 0=dom, 1=seg...
+  const targetJsDay=JS_DAYS.indexOf(dayKey);
+  let diff=targetJsDay-todayJsDay;
+  // na semana atual, diff representa a distância do hoje
+  // na semana passada, subtraímos 7
+  diff+=semanaOffset*7;
+  const d=new Date(today);
+  d.setDate(d.getDate()+diff);
+  return d;
+}
+
+function dateLabelForDayKey(dayKey, semanaOffset){
+  const d=dateForDayKey(dayKey,semanaOffset);
+  return d.getDate()+'/'+String(d.getMonth()+1).padStart(2,'0');
+}
+
+function toggleSemanaPassada(){
+  vendoSemanaPassada=!vendoSemanaPassada;
+  const btn=document.getElementById('btn-semana-passada');
+  const lbl=document.getElementById('semana-label');
+  if(btn)btn.classList.toggle('semana-passada-ativa',vendoSemanaPassada);
+  if(lbl)lbl.style.display=vendoSemanaPassada?'':'none';
+  buildCarousel();
+}
 
 const TURN_LBL={manha:'Manhã',almoco:'Almoço',tarde:'Tarde',noite:'Noite'};
 const PERM_LABELS={turnos:'Gerenciar turnos',equipe:'Ver equipe',financeiro:'Acesso financeiro',checklists:'Checklists',config:'Configurações'};
@@ -1217,19 +1265,21 @@ function buildCarousel(){
   strip.innerHTML='';track.innerHTML='';
 
   DAY_ORDER.forEach(function(day,i){
-    const alertFlag=isAlertDay(day);
-    const evDay=isEventDay(day);
-    const isToday=i===0;
+    const alertFlag=!vendoSemanaPassada&&isAlertDay(day);
+    const evDay=!vendoSemanaPassada&&isEventDay(day);
+    const isToday=i===0&&!vendoSemanaPassada;
     const btn=document.createElement('button');
+    const dateLabel=dateLabelForDayKey(day,vendoSemanaPassada?-1:0);
     btn.className='day-btn'+(isToday?' today':'')+(alertFlag?' alert':'')+(evDay&&!alertFlag?' event-day':'');
-    btn.textContent=isToday?'Hoje':DAY_LBL[day];
+    // mostra "Hoje" só na semana atual, datas nos outros
+    btn.textContent=(isToday?'Hoje':DAY_LBL[day])+' '+dateLabel;
     btn.dataset.idx=i;
     btn.onclick=function(){goDay(i)};
     strip.appendChild(btn);
 
     const slide=document.createElement('div');
     slide.className='carousel-slide';
-    slide.id='slide-'+day;
+    slide.id='slide-'+(vendoSemanaPassada?'sp-':'')+day;
     track.appendChild(slide);
   });
 
@@ -1245,7 +1295,74 @@ function goDay(idx,animate){
   document.querySelectorAll('.day-btn').forEach(function(b,i){b.classList.toggle('active',i===idx)});
   const active=document.querySelectorAll('.day-btn')[idx];
   if(active)active.scrollIntoView({inline:'center',behavior:'smooth'});
-  renderSlide(DAY_ORDER[idx]);
+  const day=DAY_ORDER[idx];
+  if(vendoSemanaPassada){
+    renderSlideSemanaPassada(day);
+  }else{
+    renderSlide(day);
+  }
+}
+
+// Render da semana passada: mostra os turnos com quem trabalhou
+// e oferece importar cada turno individualmente pra semana atual
+function renderSlideSemanaPassada(day){
+  const slideId='sp-'+day;
+  const slide=document.getElementById('slide-'+slideId)||document.getElementById('slide-sp-'+day);
+  if(!slide)return;
+  const dateStr=dateLabelForDayKey(day,-1);
+  let html='<div style="font-size:11px;font-weight:700;color:var(--accent);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px">'+DAY_FULL[day]+' '+dateStr+' — semana passada</div>';
+
+  let any=false;
+  turnosOfDay(day).forEach(function(t){
+    const nomesPassada=(HIST[day]&&HIST[day][t.id])?HIST[day][t.id]:[];
+    any=true;
+
+    const jaEscaladosHoje=(SCH[day][t.id]?SCH[day][t.id].mbs.map(function(m){return m.nome}):[]);
+    const todosJaImportados=nomesPassada.length>0&&nomesPassada.every(function(n){return jaEscaladosHoje.indexOf(n)>-1});
+
+    html+='<div class="turno-card tcard-ok" style="margin-bottom:10px"><div class="turno-head thead-ok"><div class="turno-left"><span class="turno-icon">'+turnoIconSvg(t.id)+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' — '+t.fim+'</div></div></div></div>';
+
+    if(nomesPassada.length===0){
+      html+='<div class="ev-empty" style="margin:10px 14px">Sem registro pra este turno na semana passada</div>';
+    }else{
+      nomesPassada.forEach(function(nome){
+        html+='<div class="mb-row"><div class="mb-av">'+ini(nome)+'</div><div class="mb-info"><div class="mb-name">'+nome+'</div></div></div>';
+      });
+      if(!todosJaImportados){
+        html+='<div class="mb-action-row"><button class="mb-act-btn mb-act-confirm" onclick="importarTurno(\''+day+'\',\''+t.id+'\')">Importar este turno pra semana atual</button></div>';
+      }else{
+        html+='<div style="font-size:11px;color:var(--s-conf);font-weight:600;padding:8px 14px;text-align:center">✓ Já importado na semana atual</div>';
+      }
+    }
+    html+='</div>';
+  });
+
+  if(!any)html+='<div class="ev-empty">Nenhum turno configurado pra este dia</div>';
+  slide.innerHTML=html;
+}
+
+// Importa os motoboys de um turno específico da semana passada pra semana atual,
+// adicionando como "Confirmar" (não sobrescreve quem já está escalado)
+function importarTurno(day,tid){
+  const nomesPassada=(HIST[day]&&HIST[day][tid])?HIST[day][tid]:[];
+  if(!nomesPassada.length)return;
+  if(!SCH[day][tid])return;
+  const t=CFG[day][tid];
+  let adicionados=0;
+  nomesPassada.forEach(function(nome){
+    const jaEsta=SCH[day][tid].mbs.some(function(m){return m.nome===nome});
+    const noEquipe=EQUIPE.some(function(e){return e.nome===nome});
+    if(!jaEsta&&noEquipe){
+      SCH[day][tid].mbs.push({nome:nome,ini:t.ini,fim:t.fim,status:'Confirmar'});
+      adicionados++;
+    }
+  });
+  if(adicionados>0){
+    if((SCH[day][tid].vagas||0)>0)SCH[day][tid].vagas=Math.max(0,SCH[day][tid].vagas-adicionados);
+    saveBackup('Importou '+adicionados+' motoboy(s) da semana passada: '+t.lbl+' de '+DAY_LBL[day]);
+    // re-renderiza o slide da semana passada pra mostrar o estado atualizado
+    renderSlideSemanaPassada(day);
+  }
 }
 
 function renderSlide(day){
@@ -1343,8 +1460,35 @@ function openStatus(day,tid,idx,nome){
 function applyStatus(s){
   if(!menuTarget)return;
   const day=menuTarget.day,tid=menuTarget.tid,idx=menuTarget.idx;
-  const nome=SCH[day][tid].mbs[idx].nome;
-  SCH[day][tid].mbs[idx].status=s;
+  const mb=SCH[day][tid].mbs[idx];
+  const nome=mb.nome;
+  const statusAnterior=mb.status;
+  mb.status=s;
+
+  // Detecta falta de última hora: era Confirmado, virou Indisponível, menos de 6h antes do turno
+  if(statusAnterior==='Confirmado'&&s==='Indisponível'){
+    const t=CFG[day][tid];
+    if(t&&t.ini){
+      const agora=new Date();
+      const hoje=new Date();
+      hoje.setHours(0,0,0,0);
+      // calcula quantos dias até o turno (pode ser hoje, amanhã, etc.)
+      const daysUntil=DAY_ORDER.indexOf(day);
+      const turnoDate=new Date(hoje);
+      turnoDate.setDate(turnoDate.getDate()+daysUntil);
+      const [hh,mm]=(t.ini||'00:00').split(':').map(Number);
+      turnoDate.setHours(hh,mm,0,0);
+      const horasAte=(turnoDate-agora)/3600000;
+      if(horasAte>=-1&&horasAte<=6){ // -1h a +6h: inclui quem cancela depois que o turno começou
+        const eq=EQUIPE.find(function(e){return e.nome===nome});
+        if(eq){
+          if(!eq.faltasHora)eq.faltasHora=[];
+          eq.faltasHora.push({ts:Date.now(),day:day,turno:tid,horasAte:Math.round(horasAte*10)/10});
+        }
+      }
+    }
+  }
+
   saveBackup(nome+' -> '+s);
   closeAll();renderSlide(day);buildCarousel();
 }
@@ -1543,7 +1687,7 @@ function renderMbEq(){
     }).join('');
     const bagInfo=e.bag?('<div class="mb-body-sec"><div class="field-label">Bag atual</div><div style="font-size:13px;color:var(--s-res);margin-top:4px">'+e.bag+' desde '+fmtTs(e.bagTs)+'</div></div>'):'';
     const delBtn='<div class="mb-body-sec"><button style="width:100%;padding:10px;border-radius:var(--r-md);background:var(--s-ind-bg);border:1px solid rgba(255,92,92,.35);color:var(--s-ind);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onclick="removeMotoboy('+realIdx+')">Remover motoboy</button></div>';
-    return '<div class="mb-card"><div class="mb-card-head" onclick="toggleMbCard('+i+')"><div class="mb-card-av">'+ini(e.nome)+'</div><div class="mb-card-info"><div class="mb-card-name">'+e.nome+'</div><div class="mb-card-sub">'+(e.tel||'Sem numero')+'</div></div><span class="mb-freq">'+mbFreq(e.nome)+'x</span><span class="mb-card-arrow" id="mbarr-'+i+'">&rsaquo;</span></div><div class="mb-card-body" id="mbbody-'+i+'"><div class="mb-body-sec"><div class="field-label">Nome</div><input class="field-val" value="'+e.nome+'" onchange="motoboyNomeChanged('+realIdx+',this.value)"><div class="field-label" style="margin-top:10px">Telefone</div><input class="field-val" value="'+(e.tel||'')+'" placeholder="(69) 9xxxx-xxxx" onchange="EQUIPE['+realIdx+'].tel=this.value;saveBackup(\'Telefone atualizado\')">'+waBtn+'</div><div class="mb-body-sec"><div class="field-label">Chave Pix</div><div class="pix-row"><input class="pix-val" value="'+(e.pix||'')+'" placeholder="Chave Pix" id="pix-'+i+'" onchange="EQUIPE['+realIdx+'].pix=this.value;saveBackup(\'Pix atualizado\')"><button class="copy-btn" onclick="copyPix('+i+')">Copiar</button></div></div><div class="mb-body-sec"><div class="field-label">Senha de acesso (app do motoboy)</div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">Em branco mantem a senha atual. Preencha so para trocar.</div><div class="pix-row"><input class="pix-val" type="text" value="'+(e.senha||'')+'" placeholder="Deixe em branco para manter" id="senha-'+i+'" onchange="motoboySenhaChanged('+realIdx+',this.value)"><button class="copy-btn" onclick="document.getElementById(\'senha-'+i+'\').type=document.getElementById(\'senha-'+i+'\').type===\'password\'?\'text\':\'password\'">Ver</button></div></div><div class="mb-body-sec"><div class="field-label">Disponibilidade habitual</div><div class="disp-grid">'+dispGrid+'</div></div><div class="mb-body-sec"><div class="field-label">Observacoes</div><textarea class="obs-area" onchange="EQUIPE['+realIdx+'].obs=this.value;saveBackup(\'Observacao atualizada\')">'+(e.obs||'')+'</textarea></div>'+bagInfo+delBtn+'</div></div>';
+    return '<div class="mb-card"><div class="mb-card-head" onclick="toggleMbCard('+i+')"><div class="mb-card-av">'+ini(e.nome)+'</div><div class="mb-card-info"><div class="mb-card-name">'+e.nome+'</div><div class="mb-card-sub">'+(e.tel||'Sem numero')+'</div></div><span class="mb-freq">'+mbFreq(e.nome)+''+((e.faltasHora&&e.faltasHora.filter(function(f){return Date.now()-f.ts<2592000000}).length>0)?' <span style="color:var(--s-ind);font-size:10px" title="Faltas última hora (30d)">⚡'+e.faltasHora&&e.faltasHora.filter(function(f){return Date.now()-f.ts<2592000000}).length+'</span>':'')+'x</span><span class="mb-card-arrow" id="mbarr-'+i+'">&rsaquo;</span></div><div class="mb-card-body" id="mbbody-'+i+'"><div class="mb-body-sec"><div class="field-label">Nome</div><input class="field-val" value="'+e.nome+'" onchange="motoboyNomeChanged('+realIdx+',this.value)"><div class="field-label" style="margin-top:10px">Telefone</div><input class="field-val" value="'+(e.tel||'')+'" placeholder="(69) 9xxxx-xxxx" onchange="EQUIPE['+realIdx+'].tel=this.value;saveBackup(\'Telefone atualizado\')">'+waBtn+'</div><div class="mb-body-sec"><div class="field-label">Chave Pix</div><div class="pix-row"><input class="pix-val" value="'+(e.pix||'')+'" placeholder="Chave Pix" id="pix-'+i+'" onchange="EQUIPE['+realIdx+'].pix=this.value;saveBackup(\'Pix atualizado\')"><button class="copy-btn" onclick="copyPix('+i+')">Copiar</button></div></div><div class="mb-body-sec"><div class="field-label">Senha de acesso (app do motoboy)</div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">Em branco mantem a senha atual. Preencha so para trocar.</div><div class="pix-row"><input class="pix-val" type="text" value="'+(e.senha||'')+'" placeholder="Deixe em branco para manter" id="senha-'+i+'" onchange="motoboySenhaChanged('+realIdx+',this.value)"><button class="copy-btn" onclick="document.getElementById(\'senha-'+i+'\').type=document.getElementById(\'senha-'+i+'\').type===\'password\'?\'text\':\'password\'">Ver</button></div></div><div class="mb-body-sec"><div class="field-label">Disponibilidade habitual</div><div class="disp-grid">'+dispGrid+'</div></div><div class="mb-body-sec"><div class="field-label">Observacoes</div><textarea class="obs-area" onchange="EQUIPE['+realIdx+'].obs=this.value;saveBackup(\'Observacao atualizada\')">'+(e.obs||'')+'</textarea></div>'+bagInfo+delBtn+'</div></div>';
   }).join('');
 }
 
@@ -1964,6 +2108,60 @@ function executarResetMeiaNoite(){
   buildCarousel();renderCk();schedMidnight();
 }
 
+// ── SWITCH AUTOMÁTICO ÀS 19H ──────────────────────────────────
+// Às 19h, navega automaticamente pro slide de Amanhã (índice 1)
+// pra facilitar a confirmação antecipada da equipe.
+// Hoje continua acessível — não esconde nada, só muda o foco.
+function schedSwitch19h(){
+  const now=new Date();
+  const alvo=new Date(now.getFullYear(),now.getMonth(),now.getDate(),19,0,0);
+  if(now>=alvo)alvo.setDate(alvo.getDate()+1); // já passou das 19h, agenda pro amanhã
+  setTimeout(function(){
+    if(!SESSION)return;
+    if(!document.getElementById('panel-turnos').classList.contains('active'))return;
+    if(document.querySelector('.sheet.open'))return;
+    if(!vendoSemanaPassada)goDay(1);
+    schedSwitch19h();
+  },alvo-now);
+}
+
+// ── RELATÓRIO SEMANAL VIA WHATSAPP ───────────────────────────
+// Compila o resumo da semana (confirmados, vagas abertas, faltas de última hora)
+// e abre o WhatsApp com a mensagem pronta pra enviar.
+function enviarRelatorioWhatsApp(){
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  let lines=['*Relatório semanal — Mais Delivery*'];
+  const semana=new Date(hoje);
+  semana.setDate(hoje.getDate()-hoje.getDay());
+  lines.push('Semana de '+semana.getDate()+'/'+(semana.getMonth()+1));
+  lines.push('');
+  let totalConf=0,totalVagas=0;
+  JS_DAYS.forEach(function(day){
+    const turnos=turnosOfDay(day);if(!turnos.length)return;
+    const linhasDia=[];
+    turnos.forEach(function(t){
+      const td=SCH[day]&&SCH[day][t.id];if(!td)return;
+      const conf=td.mbs.filter(function(m){return m.status==='Confirmado'||m.status==='Reserva';}).length;
+      const vagas=td.vagas||0;
+      totalConf+=conf;totalVagas+=vagas;
+      linhasDia.push((conf>=t.min?'✅':'⚠️')+' '+t.lbl+': '+conf+'/'+t.min+(vagas>0?' ('+vagas+' vaga'+(vagas>1?'s':'')+' em aberto)':''));
+    });
+    if(linhasDia.length){lines.push('*'+DAY_FULL[day].toUpperCase()+'*');lines=lines.concat(linhasDia);lines.push('');}
+  });
+  const faltantes=[];
+  EQUIPE.forEach(function(e){
+    if(e.faltasHora&&e.faltasHora.length){
+      const recentes=e.faltasHora.filter(function(f){return Date.now()-f.ts<7*86400000;});
+      if(recentes.length)faltantes.push(e.nome+' ('+recentes.length+'x)');
+    }
+  });
+  if(faltantes.length)lines.push('⚡ *Faltas de última hora:* '+faltantes.join(', '));
+  lines.push('');
+  lines.push('Total confirmados: '+totalConf+' | Vagas em aberto: '+totalVagas);
+  lines.push('Gerado por +TURNOS · Mais Delivery');
+  window.open('https://wa.me/'+CENTRAL_WA+'?text='+encodeURIComponent(lines.join('\n')),'_blank');
+}
+
 // ═══════════════════════════════════════════════════════
 // LOGIN, SESSÃO E VISÃO DO MOTOBOY
 // ═══════════════════════════════════════════════════════
@@ -2344,7 +2542,7 @@ function gistStatus(msg,erro){
 // Monta o pacote de dados (sem pix/senha — ficam só no dispositivo local)
 function buildSyncPayload(){
   const equipeSafe=EQUIPE.map(function(e){
-    return {nome:e.nome,tel:e.tel,wa:e.wa,obs:e.obs,bag:e.bag,bagTs:e.bagTs,disp:e.disp};
+    return {nome:e.nome,tel:e.tel,wa:e.wa,obs:e.obs,bag:e.bag,bagTs:e.bagTs,disp:e.disp,faltasHora:e.faltasHora||[]};
   });
   const usersSafe=USERS.map(function(u){
     return {id:u.id,role:u.role,nome:u.nome,email:u.email,cor:u.cor,perms:u.perms,logs:u.logs};
@@ -2375,8 +2573,9 @@ function applyCloudData(p){
       const e=EQUIPE.find(function(x){return x.nome===es.nome});
       if(e){
         e.tel=es.tel;e.wa=es.wa;e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;
+        if(es.faltasHora)e.faltasHora=es.faltasHora;
       }else{
-        EQUIPE.push({nome:es.nome,tel:es.tel,wa:es.wa,pix:'',obs:es.obs||'',senha:'',bag:es.bag,bagTs:es.bagTs,disp:es.disp||{}});
+        EQUIPE.push({nome:es.nome,tel:es.tel,wa:es.wa,pix:'',obs:es.obs||'',senha:'',bag:es.bag,bagTs:es.bagTs,disp:es.disp||{},faltasHora:es.faltasHora||[]});
       }
     });
     // remove localmente quem foi excluído em outro dispositivo
@@ -2629,6 +2828,7 @@ updateBanner();
 renderCk();
 initSwipe();
 schedMidnight();
+schedSwitch19h();
 bootSync();
 startAutoRefresh();
 
