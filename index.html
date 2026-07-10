@@ -2515,20 +2515,32 @@ function relayGet(timeoutMs){
 
 function syncToGist(){
   gistStatus('Salvando na nuvem...');
-  relayCall({appKey:RELAY_KEY,data:buildSyncPayload()}).then(function(res){
+  return relayCall({appKey:RELAY_KEY,data:buildSyncPayload()}).then(function(res){
     if(res.ok){
       gistStatus('Salvo '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
     }else{
       gistStatus('Erro: '+(res.error||'desconhecido'),true);
       console.warn('Falha ao salvar na nuvem:',res.error);
     }
+    return res;
   });
 }
 
 // CARREGAR — leitura via relay (funciona com Gist público ou privado)
 function loadFromGist(){
+  // se houver uma alteração local esperando pra ser salva, salva ela primeiro
+  // e só busca da nuvem DEPOIS que essa gravação terminar — senão a leitura
+  // poderia trazer a versão antiga e apagar essa alteração local
+  let pendente=Promise.resolve();
+  if(syncTimer){
+    clearTimeout(syncTimer);
+    syncTimer=null;
+    pendente=syncToGist();
+  }
   gistStatus('Carregando da nuvem...');
-  relayGet().then(function(res){
+  pendente.then(function(){
+    return relayGet();
+  }).then(function(res){
     if(!res.ok){gistStatus('Erro ao carregar: '+(res.error||'desconhecido'),true);return;}
     if(!res.data){gistStatus('Nenhum dado salvo ainda');return;}
     applyCloudData(res.data);
@@ -2579,9 +2591,19 @@ function startAutoRefresh(){
     // não recarrega se algum sheet/edição está aberto
     if(document.querySelector('.sheet.open'))return;
     if(document.querySelector('[contenteditable="true"]'))return;
+    // não recarrega se a pessoa está digitando em QUALQUER campo no momento
+    // (telefone, pix, nome de tarefa, etc.) — senão a tela poderia se redesenhar
+    // embaixo do dedo dela ou um indice de array poderia mudar no meio da edição
+    const ativo=document.activeElement;
+    if(ativo&&['INPUT','TEXTAREA','SELECT'].indexOf(ativo.tagName)>-1)return;
+    // CRÍTICO: não recarrega se há uma alteração local ainda não enviada pra nuvem —
+    // senão a busca traria a versão antiga e apagaria essa alteração antes de ela ser salva
+    if(syncTimer)return;
+    if(undoRedoBusy)return;
     relayGet().then(function(res){
       if(!res.ok){console.warn('Auto-refresh falhou:',res.error);return;}
       if(!res.data)return;
+      if(syncTimer)return; // checa de novo: pode ter mudado enquanto a rede respondia
       var stamp=res.data.salvoEm||0;
       if(stamp&&stamp!==lastCloudStamp){
         lastCloudStamp=stamp;
@@ -2589,7 +2611,7 @@ function startAutoRefresh(){
         buildCarousel();updateBanner();renderCk();
       }
     });
-  },25000);
+  },15000);
 }
 
 applyTheme();
