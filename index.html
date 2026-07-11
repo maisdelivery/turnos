@@ -69,7 +69,12 @@ body[data-theme="dark"]{
   --blur-bg:rgba(21,19,15,0.75);
   color-scheme:dark;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;overflow-x:hidden;overscroll-behavior-y:none}
+.ptr-indicator{position:fixed;top:0;left:0;right:0;z-index:999;display:flex;align-items:center;justify-content:center;gap:8px;height:0;overflow:hidden;background:var(--bg2);font-size:12px;font-weight:600;color:var(--text2);transition:height .2s ease;border-bottom:1px solid var(--border)}
+.ptr-indicator.ptr-pulling{height:52px}
+.ptr-indicator.ptr-loading{height:52px;color:var(--accent)}
+.ptr-indicator svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s}
+.ptr-indicator.ptr-ready svg{transform:rotate(180deg)}
 .topbar{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between}
 .topbar-brand{display:flex;align-items:center;gap:9px}
 .topbar-logo{width:30px;height:30px;border-radius:7px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0}
@@ -107,8 +112,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .day-btn.event-day.active{background:var(--accent);color:#fff}
 .day-btn.today::after{content:'';display:block;width:4px;height:4px;border-radius:50%;background:currentColor;margin:2px auto -4px;opacity:.6}
 .carousel-wrap{overflow:hidden}
-.carousel-track{display:flex;transition:transform .3s cubic-bezier(.4,0,.2,1)}
-.carousel-slide{min-width:100%;padding:12px 12px 0;flex-shrink:0}
+.carousel-track{display:flex;transition:transform .3s cubic-bezier(.4,0,.2,1);align-items:flex-start}
+.carousel-slide{min-width:100%;padding:12px 12px 0;flex-shrink:0;box-sizing:border-box}
 .turno-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);margin-bottom:10px;overflow:hidden;transition:border-color .2s}
 .turno-card.tcard-bad{border-color:var(--s-ind)}
 .turno-card.tcard-warn{border-color:var(--s-ag)}
@@ -156,11 +161,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .del-btn{width:26px;height:26px;border-radius:6px;background:transparent;border:none;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .del-btn:active{background:var(--s-ind-bg);color:var(--s-ind)}
 .del-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.vaga-wrap{border-top:1px solid rgba(255,92,92,.2)}
-.vaga-row{display:flex;align-items:center;gap:9px;padding:9px 13px;background:rgba(255,92,92,.1);animation:vaga-pulse 2s infinite}
-@keyframes vaga-pulse{0%,100%{background:rgba(255,92,92,.1)}50%{background:rgba(255,92,92,.18)}}
-.vaga-av{width:28px;height:28px;border-radius:50%;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--s-ind)}
-.vaga-label{font-size:11px;color:var(--s-ind);font-style:italic;flex:1}
+.vaga-wrap{border-top:1px solid rgba(74,232,112,.2)}
+.vaga-row{display:flex;align-items:center;gap:9px;padding:9px 13px;background:var(--s-conf-bg)}
+.vaga-av{width:28px;height:28px;border-radius:50%;background:var(--s-conf-bg);border:1px solid rgba(74,232,112,.4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--s-conf)}
+.vaga-label{font-size:11px;color:var(--s-conf);font-weight:600;flex:1}
 .cobrir-btn{font-size:10px;font-weight:700;padding:5px 11px;border-radius:20px;background:var(--s-ind);color:#fff;border:none;cursor:pointer;flex-shrink:0;white-space:nowrap}
 .cobrir-btn:active{opacity:.8}
 .cont-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:7px}
@@ -417,7 +421,10 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
 
     <form id="login-form-motoboy" class="login-form" style="display:none" autocomplete="on" onsubmit="return doLoginMotoboy(event)">
       <label class="login-label" for="lm-nome">Seu nome</label>
-      <select class="login-input" id="lm-nome" name="username" autocomplete="username" required></select>
+      <div style="position:relative">
+        <input class="login-input" type="text" id="lm-nome" name="username" autocomplete="off" placeholder="Digite as primeiras letras do seu nome" oninput="filtrarNomesMotoboy(this.value)" autocorrect="off" autocapitalize="words" required>
+        <div id="lm-sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);margin-top:4px;z-index:10;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.18)"></div>
+      </div>
       <label class="login-label" for="lm-senha">Senha</label>
       <input class="login-input" type="password" id="lm-senha" name="password" autocomplete="current-password" placeholder="Senha" required>
       <div class="login-error" id="lm-error"></div>
@@ -427,6 +434,10 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
 </div>
 
 <div id="app-root" style="display:none">
+<div class="ptr-indicator" id="ptr-indicator">
+  <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+  <span id="ptr-label">Puxe para atualizar</span>
+</div>
 
 <div class="topbar">
   <div class="topbar-brand">
@@ -670,6 +681,15 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
       Enviar relatório semanal no WhatsApp
     </button>
     <div id="gist-status" style="font-size:11px;color:var(--text2);text-align:center;margin-top:8px;min-height:14px"></div>
+  </div>
+
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-md);padding:13px;margin-bottom:14px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:4px">Horário de mudança automática pra Amanhã</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Quando o app muda automaticamente o foco pro dia seguinte, pra facilitar a confirmação antecipada da equipe.</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <input type="time" id="cfg-switch-hora" style="flex:1;padding:9px 10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r-md);color:var(--text);font-size:14px;outline:none">
+      <button class="sh-btn sh-btn-s" style="margin:0;padding:9px 14px;white-space:nowrap" onclick="salvarHorarioSwitch()">Salvar</button>
+    </div>
   </div>
 
   <button style="width:100%;padding:11px;border-radius:var(--r-md);background:var(--accent-dim);border:1px solid rgba(255,92,0,.25);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:14px;font-family:inherit" onclick="ativarFeriado()">Ativar modo feriado hoje</button>
@@ -1294,7 +1314,8 @@ function goDay(idx,animate){
   track.style.transform='translateX(-'+(idx*100)+'%)';
   document.querySelectorAll('.day-btn').forEach(function(b,i){b.classList.toggle('active',i===idx)});
   const active=document.querySelectorAll('.day-btn')[idx];
-  if(active)active.scrollIntoView({inline:'center',behavior:'smooth'});
+  // scrollIntoView com block:'nearest' evita mover o scroll vertical da página
+  if(active)active.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
   const day=DAY_ORDER[idx];
   if(vendoSemanaPassada){
     renderSlideSemanaPassada(day);
@@ -2028,6 +2049,18 @@ function preencherMensagens(){
   const b=document.getElementById('msg-motoboy-confirma');
   if(a)a.value=MSGS.centralParaMotoboy;
   if(b)b.value=MSGS.motoboyConfirma;
+  const inp=document.getElementById('cfg-switch-hora');
+  if(inp)inp.value=MSGS.horarioSwitch||'19:00';
+}
+
+function salvarHorarioSwitch(){
+  const inp=document.getElementById('cfg-switch-hora');
+  if(!inp||!inp.value)return;
+  MSGS.horarioSwitch=inp.value;
+  saveBackup('Horário de switch atualizado para '+inp.value);
+  gistStatus('Horário salvo — em vigor a partir de amanhã');
+  // Reagenda com o novo horário imediatamente
+  schedSwitch19h();
 }
 
 function salvarMensagens(){
@@ -2066,16 +2099,30 @@ function ativarFeriado(){
 
 function initSwipe(){
   const wrap=document.querySelector('.carousel-wrap');
-  let sx=0,sy=0,moved=false;
-  wrap.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;sy=e.touches[0].clientY;moved=false},{passive:true});
-  wrap.addEventListener('touchmove',function(e){moved=true},{passive:true});
+
+  // ── SWIPE HORIZONTAL — troca de dia ─────────────────────────
+  let sx=0,sy=0,swiping=false,swipeDir=null;
+  wrap.addEventListener('touchstart',function(e){
+    sx=e.touches[0].clientX;sy=e.touches[0].clientY;swiping=false;swipeDir=null;
+  },{passive:true});
+  wrap.addEventListener('touchmove',function(e){
+    const dx=e.touches[0].clientX-sx,dy=e.touches[0].clientY-sy;
+    if(!swipeDir){
+      // Define a direção dominante logo no início pra não travar o scroll
+      if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>8)swipeDir='h';
+      else if(Math.abs(dy)>Math.abs(dx)&&Math.abs(dy)>8)swipeDir='v';
+    }
+    swiping=true;
+  },{passive:true});
   wrap.addEventListener('touchend',function(e){
-    if(!moved)return;
-    const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
-    if(Math.abs(dx)<Math.abs(dy)||Math.abs(dx)<40)return;
+    if(!swiping||swipeDir!=='h')return;
+    const dx=e.changedTouches[0].clientX-sx;
+    if(Math.abs(dx)<40)return;
     if(dx<0&&curDayIdx<JS_DAYS.length-1)goDay(curDayIdx+1);
     else if(dx>0&&curDayIdx>0)goDay(curDayIdx-1);
   },{passive:true});
+
+  // Mouse drag (desktop)
   wrap.addEventListener('mousedown',function(e){isDrag=true;dragStart=e.clientX;dragDelta=0});
   window.addEventListener('mousemove',function(e){if(isDrag)dragDelta=e.clientX-dragStart});
   window.addEventListener('mouseup',function(){
@@ -2084,6 +2131,59 @@ function initSwipe(){
     else if(dragDelta>60&&curDayIdx>0)goDay(curDayIdx-1);
     dragDelta=0;
   });
+
+  // ── PULL-TO-REFRESH — arrastar de cima pra baixo ────────────
+  // Funciona em iOS e Android. Desativa o pull-to-refresh nativo via overscroll-behavior.
+  // Threshold: 80px pra confirmar a intenção (não dispara com um toque acidental).
+  const PTR_THRESHOLD=80;
+  let ptrStartY=0,ptrActive=false,ptrReady=false,ptrDoing=false;
+  const ptrEl=document.getElementById('ptr-indicator');
+  const ptrLabel=document.getElementById('ptr-label');
+
+  document.addEventListener('touchstart',function(e){
+    // Só ativa se estiver no topo da página e sem nada aberto
+    if(window.scrollY>10)return;
+    if(document.querySelector('.sheet.open'))return;
+    ptrStartY=e.touches[0].clientY;
+    ptrActive=true;ptrReady=false;
+  },{passive:true});
+
+  document.addEventListener('touchmove',function(e){
+    if(!ptrActive||ptrDoing)return;
+    const dy=e.touches[0].clientY-ptrStartY;
+    if(dy<=0){ptrActive=false;ptrEl.className='ptr-indicator';return;}
+    if(dy>PTR_THRESHOLD){
+      if(!ptrReady){ptrReady=true;ptrEl.classList.add('ptr-ready');if(ptrLabel)ptrLabel.textContent='Solte para atualizar';}
+    }else{
+      if(ptrReady){ptrReady=false;ptrEl.classList.remove('ptr-ready');if(ptrLabel)ptrLabel.textContent='Puxe para atualizar';}
+    }
+    ptrEl.className='ptr-indicator ptr-pulling'+(ptrReady?' ptr-ready':'');
+  },{passive:true});
+
+  document.addEventListener('touchend',function(){
+    if(!ptrActive)return;
+    ptrActive=false;
+    if(!ptrReady){ptrEl.className='ptr-indicator';return;}
+    // Confirmou — executa o refresh
+    ptrDoing=true;
+    ptrEl.className='ptr-indicator ptr-loading';
+    if(ptrLabel)ptrLabel.textContent='Atualizando...';
+    // Salva qualquer coisa pendente e depois carrega da nuvem
+    let pendente=Promise.resolve();
+    if(syncTimer){clearTimeout(syncTimer);syncTimer=null;pendente=syncToGist();}
+    pendente.then(function(){return relayGet();}).then(function(res){
+      if(res.ok&&res.data){
+        applyCloudData(res.data);
+        buildCarousel();updateBanner();renderCk();
+      }
+      ptrDoing=false;ptrReady=false;
+      ptrEl.className='ptr-indicator';
+      if(ptrLabel)ptrLabel.textContent='Puxe para atualizar';
+    }).catch(function(){
+      ptrDoing=false;ptrReady=false;
+      ptrEl.className='ptr-indicator';
+    });
+  },{passive:true});
 }
 
 function schedMidnight(){
@@ -2113,15 +2213,17 @@ function executarResetMeiaNoite(){
 // pra facilitar a confirmação antecipada da equipe.
 // Hoje continua acessível — não esconde nada, só muda o foco.
 function schedSwitch19h(){
+  const hora=MSGS.horarioSwitch||'19:00';
+  const [hh,mm]=(hora+':00').split(':').map(Number);
   const now=new Date();
-  const alvo=new Date(now.getFullYear(),now.getMonth(),now.getDate(),19,0,0);
-  if(now>=alvo)alvo.setDate(alvo.getDate()+1); // já passou das 19h, agenda pro amanhã
+  const alvo=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hh,mm||0,0);
+  if(now>=alvo)alvo.setDate(alvo.getDate()+1); // já passou, agenda pro amanhã
   setTimeout(function(){
     if(!SESSION)return;
     if(!document.getElementById('panel-turnos').classList.contains('active'))return;
     if(document.querySelector('.sheet.open'))return;
     if(!vendoSemanaPassada)goDay(1);
-    schedSwitch19h();
+    schedSwitch19h(); // reagenda pro dia seguinte
   },alvo-now);
 }
 
@@ -2174,12 +2276,37 @@ function switchLoginTab(tab){
   document.getElementById('lm-error').textContent='';
 }
 
+// Não usa mais select — campo de texto com sugestões após 4 letras
 function populateMotoboySelect(){
-  const sel=document.getElementById('lm-nome');
-  if(!sel)return;
-  sel.innerHTML=EQUIPE.map(function(e){return '<option value="'+e.nome+'">'+e.nome+'</option>'}).join('');
-  const last=safeGet('turnos_last_motoboy');
-  if(last)sel.value=last;
+  // limpa o campo ao recarregar (sem pré-seleção)
+  const inp=document.getElementById('lm-nome');
+  if(inp)inp.value='';
+  const sug=document.getElementById('lm-sugestoes');
+  if(sug){sug.innerHTML='';sug.style.display='none';}
+}
+
+function filtrarNomesMotoboy(val){
+  const sug=document.getElementById('lm-sugestoes');
+  if(!sug)return;
+  const v=(val||'').trim().toLowerCase();
+  if(v.length<4){sug.style.display='none';sug.innerHTML='';return;}
+  const matches=EQUIPE.filter(function(e){return e.nome.toLowerCase().includes(v);});
+  if(!matches.length){sug.style.display='none';sug.innerHTML='';return;}
+  sug.innerHTML=matches.map(function(e){
+    return '<div style="padding:11px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--border)" onclick="selecionarNomeMotoboy(\''+e.nome.replace(/'/g,"\\'")+'\')">'
+      +e.nome+'</div>';
+  }).join('');
+  sug.style.display='block';
+}
+
+function selecionarNomeMotoboy(nome){
+  const inp=document.getElementById('lm-nome');
+  const sug=document.getElementById('lm-sugestoes');
+  if(inp)inp.value=nome;
+  if(sug){sug.style.display='none';sug.innerHTML='';}
+  // foca no campo de senha pra facilitar o fluxo
+  const senha=document.getElementById('lm-senha');
+  if(senha)senha.focus();
 }
 
 // Pede ao navegador pra oferecer salvar a senha (funciona em Chrome/Edge/Android;
@@ -2430,9 +2557,19 @@ function renderSlideMotoboy(day){
     if(!confirmadoNoDia && idx===-1 && vagas<=0)return;
     any=true;
     const conf=td.mbs.filter(function(m){return ['Confirmado','Reserva'].indexOf(m.status)>-1}).length;
-    let tStatus=turnoStatus(conf,t.min);
-    // Vaga é uma oportunidade positiva pro motoboy — nunca mostra vermelho/amarelo nesse caso pra ele
-    if(vagas>0)tStatus='ok';
+    // Para o MOTOBOY as cores são o oposto do gerencial:
+    // vaga disponível = VERDE (oportunidade positiva)
+    // escalado e confirmado = neutro/ok
+    // turno sem vaga e ele não está = aparece só se confirmadoNoDia (visualizacao geral)
+    let tStatus;
+    if(vagas>0){
+      tStatus='ok'; // verde — há vaga, bom pra ele
+    }else if(idx>-1){
+      const mbStatus=td.mbs[idx].status;
+      tStatus=mbStatus==='Confirmado'?'ok':'warn'; // confirmado=ok, aguardando=amarelo
+    }else{
+      tStatus='ok'; // turno de colega, sem sinalização negativa pra ele
+    }
 
     html+='<div class="turno-card tcard-'+tStatus+'"><div class="turno-head thead-'+tStatus+'"><div class="turno-left"><span class="turno-icon">'+turnoIconSvg(t.id)+'</span><div><div class="turno-name">'+t.lbl+'</div><div class="turno-time">'+t.ini+' - '+t.fim+'</div></div></div></div>';
 
@@ -2506,7 +2643,9 @@ function setPanel(id,btn){
 }
 
 const ALL_SHEETS=['status-sheet','add-sheet','bag-sheet','ev-sheet','cfg-sheet','bk-sheet','cont-sheet','cks-sheet'];
+let _savedScrollY=0;
 function openSheet(id){
+  _savedScrollY=window.scrollY; // salva onde estava antes de abrir
   closeAll();
   document.getElementById(id).classList.add('open');
   document.getElementById('overlay').classList.add('open');
@@ -2516,11 +2655,23 @@ function openSheet(id){
 function closeAll(){
   ALL_SHEETS.forEach(function(s){document.getElementById(s).classList.remove('open')});
   document.getElementById('overlay').classList.remove('open');
+  // Restaura o scroll após um tick pra evitar o "pulo" visual
+  if(_savedScrollY>0){
+    requestAnimationFrame(function(){window.scrollTo({top:_savedScrollY,behavior:'instant'});});
+  }
 }
 
 document.addEventListener('DOMContentLoaded',function(){
   const ckInput=document.getElementById('ck-input');
   if(ckInput)ckInput.onkeydown=function(e){if(e.key==='Enter')addCk()};
+  // fecha dropdown de sugestões de nome ao clicar fora
+  document.addEventListener('click',function(e){
+    const sug=document.getElementById('lm-sugestoes');
+    const inp=document.getElementById('lm-nome');
+    if(sug&&inp&&!sug.contains(e.target)&&e.target!==inp){
+      sug.style.display='none';
+    }
+  });
 });
 
 // ═══════════════════════════════════════════════════════
@@ -2539,10 +2690,13 @@ function gistStatus(msg,erro){
   if(el){el.textContent=msg;el.style.color=erro?'var(--s-ind)':'var(--s-conf)';}
 }
 
-// Monta o pacote de dados (sem pix/senha — ficam só no dispositivo local)
+// Monta o pacote completo de dados — PIX incluído (vai pro relay privado e Drive backup).
+// Senhas de login ficam no relay via CREDENTIALS (não no payload).
 function buildSyncPayload(){
   const equipeSafe=EQUIPE.map(function(e){
-    return {nome:e.nome,tel:e.tel,wa:e.wa,obs:e.obs,bag:e.bag,bagTs:e.bagTs,disp:e.disp,faltasHora:e.faltasHora||[]};
+    // PIX agora sincroniza — fica no relay (privado) e no Drive backup (também privado),
+    // nunca no Gist público. Permite que qualquer dispositivo acesse o PIX de qualquer motoboy.
+    return {nome:e.nome,tel:e.tel,wa:e.wa,pix:e.pix||'',obs:e.obs,bag:e.bag,bagTs:e.bagTs,disp:e.disp,faltasHora:e.faltasHora||[]};
   });
   const usersSafe=USERS.map(function(u){
     return {id:u.id,role:u.role,nome:u.nome,email:u.email,cor:u.cor,perms:u.perms,logs:u.logs};
@@ -2574,8 +2728,9 @@ function applyCloudData(p){
       if(e){
         e.tel=es.tel;e.wa=es.wa;e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;
         if(es.faltasHora)e.faltasHora=es.faltasHora;
+        if(es.pix!==undefined)e.pix=es.pix; // PIX agora sincroniza entre dispositivos
       }else{
-        EQUIPE.push({nome:es.nome,tel:es.tel,wa:es.wa,pix:'',obs:es.obs||'',senha:'',bag:es.bag,bagTs:es.bagTs,disp:es.disp||{},faltasHora:es.faltasHora||[]});
+        EQUIPE.push({nome:es.nome,tel:es.tel,wa:es.wa,pix:es.pix||'',obs:es.obs||'',senha:'',bag:es.bag,bagTs:es.bagTs,disp:es.disp||{},faltasHora:es.faltasHora||[]});
       }
     });
     // remove localmente quem foi excluído em outro dispositivo
