@@ -96,6 +96,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .event-text{font-size:12px;color:var(--accent);font-weight:500;flex:1}
 .panel{display:none;padding-bottom:100px}
 .panel.active{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
 .day-strip-wrap{position:sticky;top:53px;z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:8px 14px 7px}
 .day-strip-row{display:flex;align-items:center;gap:6px}
 .week-nav-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s}
@@ -256,6 +257,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mb-freq{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--bg3);color:var(--text3);flex-shrink:0}
 .mb-card-arrow{color:var(--text3);font-size:14px;transition:transform .2s;flex-shrink:0}
 .mb-card-arrow.open{transform:rotate(90deg)}
+.mb-quick-btns{display:flex;gap:4px;flex-shrink:0;align-items:center}
+.mb-quick-btn{width:26px;height:26px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;flex-shrink:0}
+.mb-quick-btn-wa{background:rgba(37,211,102,.15);color:#25D366}
+.mb-quick-btn-pix{background:var(--accent-dim);color:var(--accent)}
+.mb-quick-btn svg{width:13px;height:13px}
 .mb-card-body{display:none;border-top:1px solid var(--border)}
 .mb-card-body.open{display:block}
 .mb-body-sec{padding:10px 13px;border-bottom:1px solid var(--border)}
@@ -505,6 +511,10 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
 
 <div id="panel-turnos" class="panel active">
   <div id="jogo-alert" style="display:none"></div>
+  <div id="turnos-loading" style="display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px">
+    <svg viewBox="0 0 24 24" style="width:28px;height:28px;stroke:var(--accent);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+    <span style="font-size:12px;color:var(--text2);font-weight:500">Carregando turnos...</span>
+  </div>
   <div class="day-strip-wrap">
     <div class="day-strip-row">
       <button class="week-nav-btn" id="btn-semana-passada" onclick="toggleSemanaPassada()" title="Semana passada">
@@ -1088,6 +1098,22 @@ function renderBkList(){
 
 function ini(n){return n.split(' ').map(function(w){return w[0]}).join('').slice(0,2).toUpperCase()}
 
+// Converte qualquer formato de telefone brasileiro para o formato do WhatsApp (5569XXXXXXXXX)
+// Aceita: (69) 9xxxx-xxxx, 69 9xxxx-xxxx, 9xxxx-xxxx, só os dígitos, etc.
+function parseTelToWa(tel){
+  if(!tel)return'';
+  const digits=tel.replace(/\D/g,''); // remove tudo que não é número
+  if(!digits)return'';
+  // já tem código do país (55) + DDD + número = 12 ou 13 dígitos
+  if(digits.length===13&&digits.startsWith('55'))return digits;
+  if(digits.length===12&&digits.startsWith('55'))return digits;
+  // tem DDD + número = 10 ou 11 dígitos
+  if(digits.length===11||digits.length===10)return'55'+digits;
+  // só o número sem DDD = 8 ou 9 dígitos (assume DDD 69, Alta Floresta-RO)
+  if(digits.length===9||digits.length===8)return'5569'+digits;
+  return digits; // retorna o que tiver, melhor que nada
+}
+
 // Ícones minimalistas (SVG, mesmo estilo visual do resto do app) para cada turno
 function turnoIconSvg(turnoId){
   const icons={
@@ -1100,6 +1126,18 @@ function turnoIconSvg(turnoId){
 }
 function spCls(s){return{Confirmado:'sp-conf',Aguardando:'sp-ag',Confirmar:'sp-cfm',Indisponível:'sp-ind',Reserva:'sp-res'}[s]||'sp-cfm'}
 function fmtTs(ts){if(!ts)return'—';const d=new Date(ts);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+
+// Retorna há quanto tempo o equipamento foi entregue, ex: "há 3 dias", "há 2 meses"
+function tempoDesde(ts){
+  if(!ts)return null;
+  const dias=Math.floor((Date.now()-ts)/86400000);
+  if(dias===0)return'Hoje';
+  if(dias===1)return'Há 1 dia';
+  if(dias<30)return'Há '+dias+' dias';
+  const meses=Math.floor(dias/30);
+  if(meses===1)return'Há 1 mês';
+  return'Há '+meses+' meses';
+}
 function fmtDate(s){if(!s)return'';const p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
 function dateStr(d){return d.toISOString().split('T')[0]}
 
@@ -1706,9 +1744,38 @@ function renderMbEq(){
       }).join('');
       return '<div class="disp-day-row"><span class="disp-day-lbl">'+DAY_LBL[d]+'</span><div class="disp-turn-opts">'+opts+'</div></div>';
     }).join('');
-    const bagInfo=e.bag?('<div class="mb-body-sec"><div class="field-label">Bag atual</div><div style="font-size:13px;color:var(--s-res);margin-top:4px">'+e.bag+' desde '+fmtTs(e.bagTs)+'</div></div>'):'';
+    // ── Seção de equipamentos ──
+    function equipField(label,valField,tsField,idx){
+      const v=e[valField]||'';
+      const ts=e[tsField]||null;
+      const tempo=ts?tempoDesde(ts):'';
+      const dataFmt=ts?(' · '+new Date(ts).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})):'';
+      return '<div style="margin-bottom:10px"><div class="field-label">'+label+'</div>'+
+        '<div class="pix-row">'+
+        '<input class="pix-val" value="'+v+'" placeholder="Número" '+
+        'onchange="EQUIPE['+realIdx+'].'+valField+'=this.value;EQUIPE['+realIdx+'].'+tsField+'=this.value?Date.now():null;saveBackup(\'Equipamento atualizado\')">'+
+        (v?('<span style="font-size:10px;color:var(--text2);margin-left:8px;white-space:nowrap">'+tempo+dataFmt+'</span>'):'')+'</div>'+
+        '</div>';
+    }
+    const unifTem=!!e.uniformeQtd;
+    const equipInfo='<div class="mb-body-sec"><div class="field-label" style="margin-bottom:8px">Equipamentos</div>'+
+      equipField('Número da bag','bag','bagTs',realIdx)+
+      equipField('Número do suporte de copos','suporteCop','suporteCopTs',realIdx)+
+      '<div style="margin-bottom:6px"><div class="field-label">Uniforme</div>'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-top:4px">'+
+      '<button class="toggle '+(unifTem?'on':'')+'" id="unif-toggle-'+i+'" onclick="toggleUniforme('+realIdx+','+i+')"></button>'+
+      '<span style="font-size:12px;color:var(--text2)">'+(unifTem?'Tem uniforme':'Sem uniforme')+'</span>'+
+      '</div>'+
+      (unifTem?'<div class="pix-row" style="margin-top:6px"><input class="pix-val" type="number" min="1" value="'+(e.uniformeQtd||1)+'" placeholder="Qtd. peças" style="max-width:100px" onchange="EQUIPE['+realIdx+'].uniformeQtd=parseInt(this.value)||1;saveBackup(\'Uniforme atualizado\')"><span style="font-size:10px;color:var(--text2);margin-left:8px;white-space:nowrap">'+(e.uniformeTs?tempoDesde(e.uniformeTs)+' · '+new Date(e.uniformeTs).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}):'')+'</span></div>':'')+'</div>'+
+      '</div>';
     const delBtn='<div class="mb-body-sec"><button style="width:100%;padding:10px;border-radius:var(--r-md);background:var(--s-ind-bg);border:1px solid rgba(255,92,92,.35);color:var(--s-ind);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit" onclick="removeMotoboy('+realIdx+')">Remover motoboy</button></div>';
-    return '<div class="mb-card"><div class="mb-card-head" onclick="toggleMbCard('+i+')"><div class="mb-card-av">'+ini(e.nome)+'</div><div class="mb-card-info"><div class="mb-card-name">'+e.nome+'</div><div class="mb-card-sub">'+(e.tel||'Sem numero')+'</div></div><span class="mb-freq">'+mbFreq(e.nome)+''+((e.faltasHora&&e.faltasHora.filter(function(f){return Date.now()-f.ts<2592000000}).length>0)?' <span style="color:var(--s-ind);font-size:10px" title="Faltas última hora (30d)">⚡'+e.faltasHora&&e.faltasHora.filter(function(f){return Date.now()-f.ts<2592000000}).length+'</span>':'')+'x</span><span class="mb-card-arrow" id="mbarr-'+i+'">&rsaquo;</span></div><div class="mb-card-body" id="mbbody-'+i+'"><div class="mb-body-sec"><div class="field-label">Nome</div><input class="field-val" value="'+e.nome+'" onchange="motoboyNomeChanged('+realIdx+',this.value)"><div class="field-label" style="margin-top:10px">Telefone</div><input class="field-val" value="'+(e.tel||'')+'" placeholder="(69) 9xxxx-xxxx" onchange="EQUIPE['+realIdx+'].tel=this.value;saveBackup(\'Telefone atualizado\')">'+waBtn+'</div><div class="mb-body-sec"><div class="field-label">Chave Pix</div><div class="pix-row"><input class="pix-val" value="'+(e.pix||'')+'" placeholder="Chave Pix" id="pix-'+i+'" onchange="EQUIPE['+realIdx+'].pix=this.value;saveBackup(\'Pix atualizado\')"><button class="copy-btn" onclick="copyPix('+i+')">Copiar</button></div></div><div class="mb-body-sec"><div class="field-label">Senha de acesso (app do motoboy)</div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">Em branco mantem a senha atual. Preencha so para trocar.</div><div class="pix-row"><input class="pix-val" type="text" value="'+(e.senha||'')+'" placeholder="Deixe em branco para manter" id="senha-'+i+'" onchange="motoboySenhaChanged('+realIdx+',this.value)"><button class="copy-btn" onclick="document.getElementById(\'senha-'+i+'\').type=document.getElementById(\'senha-'+i+'\').type===\'password\'?\'text\':\'password\'">Ver</button></div></div><div class="mb-body-sec"><div class="field-label">Disponibilidade habitual</div><div class="disp-grid">'+dispGrid+'</div></div><div class="mb-body-sec"><div class="field-label">Observacoes</div><textarea class="obs-area" onchange="EQUIPE['+realIdx+'].obs=this.value;saveBackup(\'Observacao atualizada\')">'+(e.obs||'')+'</textarea></div>'+bagInfo+delBtn+'</div></div>';
+    // Botões rápidos no header (sem abrir gaveta)
+    const _wasvg='<svg viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12 2a10 10 0 1 1 0 20A10 10 0 0 1 12 2"/></svg>';
+    const _pixsvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    const _qWa=e.wa?('<a class="mb-quick-btn mb-quick-btn-wa" href="https://wa.me/'+e.wa+'" target="_blank" onclick="event.stopPropagation()">'+_wasvg+'</a>'):'';
+    const _qPix=e.pix?('<button class="mb-quick-btn mb-quick-btn-pix" onclick="event.stopPropagation();copyPixRapido('+realIdx+');" title="Copiar PIX">'+_pixsvg+'</button>'):'';
+    const quickBtns=(_qWa||_qPix)?('<div class="mb-quick-btns">'+_qWa+_qPix+'</div>'):'';
+    return '<div class="mb-card"><div class="mb-card-head" onclick="toggleMbCard('+i+')"><div class="mb-card-av">'+ini(e.nome)+'</div><div class="mb-card-info"><div class="mb-card-name">'+e.nome+'</div><div class="mb-card-sub">'+(e.tel||'Sem numero')+'</div></div>'+quickBtns+'<span class="mb-freq">'+mbFreq(e.nome)+''+((e.faltasHora&&e.faltasHora.filter(function(f){return Date.now()-f.ts<2592000000}).length>0)?' <span style="color:var(--s-ind);font-size:10px" title="Faltas última hora (30d)">⚡'+e.faltasHora&&e.faltasHora.filter(function(f){return Date.now()-f.ts<2592000000}).length+'</span>':'')+'x</span><span class="mb-card-arrow" id="mbarr-'+i+'">&rsaquo;</span></div><div class="mb-card-body" id="mbbody-'+i+'"><div class="mb-body-sec"><div class="field-label">Nome</div><input class="field-val" value="'+e.nome+'" onchange="motoboyNomeChanged('+realIdx+',this.value)"><div class="field-label" style="margin-top:10px">Telefone</div><input class="field-val" value="'+(e.tel||'')+'" placeholder="(69) 9xxxx-xxxx" onchange="EQUIPE['+realIdx+'].tel=this.value;EQUIPE['+realIdx+'].wa=parseTelToWa(this.value);saveBackup(\'Telefone atualizado\')">'+waBtn+'</div><div class="mb-body-sec"><div class="field-label">Chave Pix</div><div class="pix-row"><input class="pix-val" value="'+(e.pix||'')+'" placeholder="Chave Pix" id="pix-'+i+'" onchange="EQUIPE['+realIdx+'].pix=this.value;saveBackup(\'Pix atualizado\')"><button class="copy-btn" onclick="copyPix('+i+')">Copiar</button></div></div><div class="mb-body-sec"><div class="field-label">Senha de acesso (app do motoboy)</div><div style="font-size:10px;color:var(--text3);margin-bottom:6px">Em branco mantem a senha atual. Preencha so para trocar.</div><div class="pix-row"><input class="pix-val" type="text" value="'+(e.senha||'')+'" placeholder="Deixe em branco para manter" id="senha-'+i+'" onchange="motoboySenhaChanged('+realIdx+',this.value)"><button class="copy-btn" onclick="document.getElementById(\'senha-'+i+'\').type=document.getElementById(\'senha-'+i+'\').type===\'password\'?\'text\':\'password\'">Ver</button></div></div><div class="mb-body-sec"><div class="field-label">Disponibilidade habitual</div><div class="disp-grid">'+dispGrid+'</div></div><div class="mb-body-sec"><div class="field-label">Observacoes</div><textarea class="obs-area" onchange="EQUIPE['+realIdx+'].obs=this.value;saveBackup(\'Observacao atualizada\')">'+(e.obs||'')+'</textarea></div>'+equipInfo+delBtn+'</div></div>';
   }).join('');
 }
 
@@ -1782,6 +1849,25 @@ function toggleDisp(btn){
   if(pos>-1)e.disp[day].splice(pos,1);else e.disp[day].push(turno);
   btn.classList.toggle('on');
   saveBackup('Disponibilidade de '+e.nome+' atualizada');
+}
+
+function toggleUniforme(realIdx,cardIdx){
+  const e=EQUIPE[realIdx];if(!e)return;
+  if(e.uniformeQtd){
+    e.uniformeQtd=null;e.uniformeTs=null;
+  }else{
+    e.uniformeQtd=1;e.uniformeTs=Date.now();
+  }
+  saveBackup('Uniforme atualizado: '+e.nome);
+  renderMbEq();
+}
+
+function copyPixRapido(realIdx){
+  const e=EQUIPE[realIdx];
+  if(!e||!e.pix)return;
+  navigator.clipboard.writeText(e.pix).then(function(){
+    gistStatus('PIX de '+e.nome+' copiado!');
+  }).catch(function(){});
 }
 
 function copyPix(i){
@@ -2214,16 +2300,17 @@ function executarResetMeiaNoite(){
 // Hoje continua acessível — não esconde nada, só muda o foco.
 function schedSwitch19h(){
   const hora=MSGS.horarioSwitch||'19:00';
-  const [hh,mm]=(hora+':00').split(':').map(Number);
+  const partes=(hora+':00').split(':').map(Number);
+  const hh=partes[0]||19, mm=partes[1]||0;
   const now=new Date();
-  const alvo=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hh,mm||0,0);
-  if(now>=alvo)alvo.setDate(alvo.getDate()+1); // já passou, agenda pro amanhã
+  const alvo=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hh,mm,0);
+  if(now>=alvo)alvo.setDate(alvo.getDate()+1);
   setTimeout(function(){
+    schedSwitch19h(); // reagenda SEMPRE pro dia seguinte — independente do que aconteça abaixo
     if(!SESSION)return;
     if(!document.getElementById('panel-turnos').classList.contains('active'))return;
     if(document.querySelector('.sheet.open'))return;
     if(!vendoSemanaPassada)goDay(1);
-    schedSwitch19h(); // reagenda pro dia seguinte
   },alvo-now);
 }
 
@@ -2422,11 +2509,16 @@ function applySessionUI(){
     const show=isMotoboy?(panel==='turnos'||panel==='conta'):(panel!=='conta');
     b.style.display=show?'':'none';
   });
+  // Motoboy não vê a seta de semana passada nem pode importar turnos
+  const btnSp=document.getElementById('btn-semana-passada');
+  if(btnSp)btnSp.style.display=isMotoboy?'none':'';
   const roleLabel=document.getElementById('topbar-role-label');
   if(isMotoboy){
     roleLabel.textContent='Motoboy — '+SESSION.nome;
     document.getElementById('btn-config').style.display='none';
     document.getElementById('btn-backups').style.display='none';
+    // garante que não está em modo semana passada ao logar como motoboy
+    if(vendoSemanaPassada)toggleSemanaPassada();
   }else{
     const u=USERS.find(function(x){return x.id===SESSION.userId});
     roleLabel.textContent=u?u.role:'Gerente';
@@ -2506,8 +2598,20 @@ function startApp(){
   document.getElementById('login-gate').style.display='none';
   document.getElementById('app-root').style.display='block';
   applySessionUI();
-  buildCarousel();
   updateUndoRedoButtons();
+  // Se os dados da nuvem já carregaram (bootSync anterior ao login), renderiza direto
+  // Se não, mostra loading e aguarda
+  if(cloudDataLoaded){
+    buildCarousel();
+    ocultarLoadingCarousel();
+  }else{
+    const tl=document.getElementById('turnos-loading');
+    const cw=document.querySelector('.carousel-wrap');
+    const dsw=document.querySelector('.day-strip-wrap');
+    if(tl)tl.style.display='flex';
+    if(cw)cw.style.visibility='hidden';
+    if(dsw)dsw.style.visibility='hidden';
+  }
 }
 
 function tryAutoLogin(){
@@ -2696,7 +2800,11 @@ function buildSyncPayload(){
   const equipeSafe=EQUIPE.map(function(e){
     // PIX agora sincroniza — fica no relay (privado) e no Drive backup (também privado),
     // nunca no Gist público. Permite que qualquer dispositivo acesse o PIX de qualquer motoboy.
-    return {nome:e.nome,tel:e.tel,wa:e.wa,pix:e.pix||'',obs:e.obs,bag:e.bag,bagTs:e.bagTs,disp:e.disp,faltasHora:e.faltasHora||[]};
+    return {nome:e.nome,tel:e.tel,wa:e.wa,pix:e.pix||'',obs:e.obs,
+      bag:e.bag,bagTs:e.bagTs,
+      suporteCop:e.suporteCop||null,suporteCopTs:e.suporteCopTs||null,
+      uniformeQtd:e.uniformeQtd||null,uniformeTs:e.uniformeTs||null,
+      disp:e.disp,faltasHora:e.faltasHora||[]};
   });
   const usersSafe=USERS.map(function(u){
     return {id:u.id,role:u.role,nome:u.nome,email:u.email,cor:u.cor,perms:u.perms,logs:u.logs};
@@ -2726,11 +2834,18 @@ function applyCloudData(p){
     p.EQUIPE.forEach(function(es){
       const e=EQUIPE.find(function(x){return x.nome===es.nome});
       if(e){
-        e.tel=es.tel;e.wa=es.wa;e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;
+        e.tel=es.tel;
+        e.wa=es.wa||(es.tel?parseTelToWa(es.tel):'');
+        e.obs=es.obs;e.bag=es.bag;e.bagTs=es.bagTs;e.disp=es.disp;
+        if(es.suporteCop!==undefined)e.suporteCop=es.suporteCop;
+        if(es.suporteCopTs!==undefined)e.suporteCopTs=es.suporteCopTs;
+        if(es.uniformeQtd!==undefined)e.uniformeQtd=es.uniformeQtd;
+        if(es.uniformeTs!==undefined)e.uniformeTs=es.uniformeTs;
         if(es.faltasHora)e.faltasHora=es.faltasHora;
-        if(es.pix!==undefined)e.pix=es.pix; // PIX agora sincroniza entre dispositivos
+        if(es.pix!==undefined)e.pix=es.pix;
       }else{
-        EQUIPE.push({nome:es.nome,tel:es.tel,wa:es.wa,pix:es.pix||'',obs:es.obs||'',senha:'',bag:es.bag,bagTs:es.bagTs,disp:es.disp||{},faltasHora:es.faltasHora||[]});
+        const waGerado=es.wa||(es.tel?parseTelToWa(es.tel):'');
+        EQUIPE.push({nome:es.nome,tel:es.tel,wa:waGerado,pix:es.pix||'',obs:es.obs||'',senha:'',bag:es.bag,bagTs:es.bagTs,disp:es.disp||{},faltasHora:es.faltasHora||[]});
       }
     });
     // remove localmente quem foi excluído em outro dispositivo
@@ -2910,20 +3025,31 @@ function loadFromGist(){
 // dessa busca terminar — senão corre o risco de salvar o "esqueleto" padrão
 // por engano e sobrescrever a escala real na nuvem (bug já visto e corrigido).
 let cloudDataLoaded=false;
+function ocultarLoadingCarousel(){
+  const tl=document.getElementById('turnos-loading');
+  const cw=document.querySelector('.carousel-wrap');
+  const dsw=document.querySelector('.day-strip-wrap');
+  if(tl){tl.style.display='none';}
+  if(cw){cw.style.visibility='visible';}
+  if(dsw){dsw.style.visibility='visible';}
+}
+
 function bootSync(){
   relayGet().then(function(res){
     if(!res.ok||!res.data){
       if(!res.ok)console.warn('Boot sync falhou:',res.error);
-      pushHistory(); // mesmo sem nuvem, guarda o estado padrão como ponto de partida
+      pushHistory();
     }else{
       applyCloudData(res.data);
       if(!res.data.HIST||!Object.keys(res.data.HIST).length)snapshotHistorico();
-      buildCarousel();updateBanner();renderCk();
-      HISTORY=[];HISTORY_PTR=-1; // reseta o undo: começa do estado recém-carregado da nuvem
+      HISTORY=[];HISTORY_PTR=-1;
       pushHistory();
     }
+    // Sempre renderiza após bootSync, seja com dados da nuvem ou sem
+    buildCarousel();updateBanner();renderCk();
+    ocultarLoadingCarousel();
     cloudDataLoaded=true;
-    startCkChecker(); // só inicia o verificador de tarefas agora, com dados confirmados
+    startCkChecker();
   });
 }
 
@@ -2977,8 +3103,15 @@ if(tryAutoLogin()){
   document.getElementById('login-gate').style.display='none';
   document.getElementById('app-root').style.display='block';
   applySessionUI();
+  // Mostra loading em vez do carousel vazio — evita o "flash" de dados antigos
+  const tl=document.getElementById('turnos-loading');
+  const cw=document.querySelector('.carousel-wrap');
+  const dsw=document.querySelector('.day-strip-wrap');
+  if(tl){tl.style.display='flex';}
+  if(cw){cw.style.visibility='hidden';}
+  if(dsw){dsw.style.visibility='hidden';}
 }
-buildCarousel();
+// NÃO renderiza o carousel aqui — bootSync vai fazer isso após carregar os dados reais
 updateBanner();
 renderCk();
 initSwipe();
