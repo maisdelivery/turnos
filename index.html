@@ -696,7 +696,11 @@ body.desktop-mode .day-strip-row{overflow-x:visible;flex-wrap:wrap;gap:4px;paddi
       <button class="sh-btn sh-btn-s" style="flex:1;margin:0;padding:9px" onclick="syncToGist()">Forçar salvamento</button>
       <button class="sh-btn sh-btn-s" style="flex:1;margin:0;padding:9px" onclick="loadFromGist()">Recarregar da nuvem</button>
     </div>
-    <button class="sh-btn sh-btn-s" style="width:100%;margin-top:8px;padding:9px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="enviarRelatorioWhatsApp()">
+    <button class="sh-btn sh-btn-s" style="width:100%;margin-top:8px;padding:9px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="copiarLinkGeral()">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Copiar link geral dos motoboys
+    </button>
+    <div style="font-size:10px;color:var(--text3);margin-top:4px;text-align:center">Manda no grupo — vai direto pra tela de motoboy sem ver o acesso gerencial</div>
       <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       Enviar relatório semanal no WhatsApp
     </button>
@@ -765,7 +769,9 @@ body.desktop-mode .day-strip-row{overflow-x:visible;flex-wrap:wrap;gap:4px;paddi
     <div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Central → Motoboy</div>
     <textarea class="obs-area" id="msg-central-motoboy" style="margin-top:0;margin-bottom:12px"></textarea>
     <div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Motoboy → Central (confirmação)</div>
-    <textarea class="obs-area" id="msg-motoboy-confirma" style="margin-top:0;margin-bottom:10px"></textarea>
+    <textarea class="obs-area" id="msg-motoboy-confirma" style="margin-top:0;margin-bottom:12px"></textarea>
+    <div style="font-size:10px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Motoboy → Central (reserva)</div>
+    <textarea class="obs-area" id="msg-motoboy-reserva" style="margin-top:0;margin-bottom:10px"></textarea>
     <button class="sh-btn sh-btn-s" style="margin:0;padding:9px" onclick="salvarMensagens()">Salvar mensagens</button>
   </div>
 
@@ -1313,6 +1319,7 @@ function getEventsNext7(){
 let MSGS={
   centralParaMotoboy:'Opa {nome}, posso confirmar sua presença nas entregas {dia} {hora_ini} até {hora_fim}?',
   motoboyConfirma:'Opa, confirmei meu horário pra {dia} {hora_ini} até {hora_fim}',
+  motoboyReserva:'Opa, entrei como reserva no turno {dia} {hora_ini} até {hora_fim} — se precisar de mim é só chamar',
   linkNaMensagem:true,           // inclui o link do app na mensagem de confirmação pro motoboy
   // Configurações de notificação
   notifVagasAtiva:true,
@@ -1360,7 +1367,10 @@ function salvarTelefone(realIdx,val){
 }
 
 function buildWaMsg(nome,turnolbl,dayKey,iniH,fimH){
-  const msg=aplicarTemplate(MSGS.centralParaMotoboy,{nome:nome,dia:diaRelativoLabel(dayKey),hora_ini:iniH||'',hora_fim:fimH||''});
+  let msg=aplicarTemplate(MSGS.centralParaMotoboy,{nome:nome,dia:diaRelativoLabel(dayKey),hora_ini:iniH||'',hora_fim:fimH||''});
+  if(MSGS.linkNaMensagem!==false){
+    msg+='\n\nConfirme pelo app: '+mbLinkUrl(nome);
+  }
   return encodeURIComponent(msg);
 }
 
@@ -1387,28 +1397,47 @@ function copiarLinkMotoboy(nome){
   });
 }
 
-// Ao abrir o app, verifica se tem ?mb= na URL e preenche o campo de login
+// Ao abrir o app, verifica se tem ?mb= ou ?modo=motoboy na URL
 function detectarLinkMotoboy(){
   try{
     const params=new URLSearchParams(window.location.search);
     const slug=params.get('mb');
-    if(!slug)return;
-    // Procura motoboy pelo slug
-    const eq=EQUIPE.find(function(e){return mbSlug(e.nome)===slug;});
-    if(!eq)return;
-    // Preenche o campo e muda pra aba motoboy
-    document.querySelectorAll('[onclick*="switchLogin"]').forEach(function(b){
-      if(b.textContent.includes('Motoboy')||b.getAttribute('onclick').includes('motoboy'))b.click();
-    });
-    const inp=document.getElementById('lm-nome');
-    if(inp){inp.value=eq.nome;inp.dispatchEvent(new Event('input'));}
-    selecionarNomeMotoboy(eq.nome);
-    // Foca na senha automaticamente
-    setTimeout(function(){
-      const s=document.getElementById('lm-senha');
-      if(s)s.focus();
-    },200);
+    const modo=params.get('modo');
+
+    // ?modo=motoboy — link genérico que vai direto pra tela de motoboy (sem mostrar gerencial)
+    if(modo==='motoboy'){
+      // Esconde a opção de login gerencial
+      document.querySelectorAll('[onclick*="switchLogin(\'gerencial\')"]').forEach(function(b){
+        b.style.display='none';
+      });
+      // Muda pra aba motoboy
+      const tabMb=document.querySelector('[onclick*="switchLogin(\'motoboy\')"]');
+      if(tabMb)tabMb.click();
+    }
+
+    // ?mb=nome-slug — link individual, preenche o nome automaticamente
+    if(slug){
+      const tabMb=document.querySelector('[onclick*="switchLogin(\'motoboy\')"]');
+      if(tabMb)tabMb.click();
+      const eq=EQUIPE.find(function(e){return mbSlug(e.nome)===slug;});
+      if(!eq)return;
+      const inp=document.getElementById('lm-nome');
+      if(inp){inp.value=eq.nome;}
+      selecionarNomeMotoboy(eq.nome);
+      setTimeout(function(){
+        const s=document.getElementById('lm-senha');
+        if(s)s.focus();
+      },200);
+    }
   }catch(e){}
+}
+
+// Gera o link genérico para todos os motoboys (sem identificar a pessoa)
+function copiarLinkGeral(){
+  const url=window.location.origin+window.location.pathname+'?modo=motoboy';
+  navigator.clipboard.writeText(url).then(function(){
+    gistStatus('Link geral copiado!');
+  }).catch(function(){prompt('Copie o link:',url);});
 }
 
 function buildWaMsgMotoboyConfirma(dayKey,iniH,fimH,nomeParaLink){
@@ -2511,8 +2540,10 @@ function renderCfg(){
 function preencherMensagens(){
   const a=document.getElementById('msg-central-motoboy');
   const b=document.getElementById('msg-motoboy-confirma');
+  const br=document.getElementById('msg-motoboy-reserva');
   if(a)a.value=MSGS.centralParaMotoboy;
   if(b)b.value=MSGS.motoboyConfirma;
+  if(br)br.value=MSGS.motoboyReserva||'';
   const inp=document.getElementById('cfg-switch-hora');
   if(inp)inp.value=MSGS.horarioSwitch||'19:00';
   // Preenche toggles e campos de notificacao
@@ -2680,8 +2711,10 @@ function salvarHorarioSwitch(){
 function salvarMensagens(){
   const a=document.getElementById('msg-central-motoboy');
   const b=document.getElementById('msg-motoboy-confirma');
+  const br=document.getElementById('msg-motoboy-reserva');
   if(a&&a.value.trim())MSGS.centralParaMotoboy=a.value.trim();
   if(b&&b.value.trim())MSGS.motoboyConfirma=b.value.trim();
+  if(br&&br.value.trim())MSGS.motoboyReserva=br.value.trim();
   saveBackup('Mensagens de WhatsApp atualizadas');
   gistStatus('Mensagens salvas');
 }
@@ -3269,8 +3302,11 @@ function motoboyReservar(day,tid,comoReserva){
   if(!comoReserva&&(SCH[day][tid].vagas||0)>0)SCH[day][tid].vagas--;
   saveBackup(nome+' entrou como '+status+' pelo app');
   refreshSlide(day);buildCarousel();
-  const msg=buildWaMsgMotoboyConfirma(day,t.ini,t.fim,nome);
-  setTimeout(function(){window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');},150);
+  // Usa template diferente dependendo se é reserva ou confirmação normal
+  const tpl=comoReserva?MSGS.motoboyReserva:MSGS.motoboyConfirma;
+  let msg=aplicarTemplate(tpl,{dia:diaRelativoLabel(day),hora_ini:t.ini||'',hora_fim:t.fim||''});
+  if(MSGS.linkNaMensagem!==false)msg+='\n\nAcesse o app: '+mbLinkUrl(nome);
+  setTimeout(function(){window.open('https://wa.me/'+CENTRAL_WA+'?text='+encodeURIComponent(msg),'_blank');},150);
 }
 
 function setPanel(id,btn){
