@@ -314,6 +314,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:150;backdrop-filter:blur(2px)}
 .overlay.open{display:block}
 .sheet{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--bg2);border-top:1px solid var(--border2);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:18px 16px 44px;transform:translateY(100%);transition:transform .25s ease;max-height:90vh;overflow-y:auto}
+#cfg-sheet{padding:18px 16px 0;overflow-y:hidden;max-height:92vh}
 .sheet.open{transform:translateY(0)}
 .sheet-handle{width:34px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 16px}
 .sheet-title{font-size:15px;font-weight:700;text-align:center;margin-bottom:3px}
@@ -504,7 +505,7 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
   </div>
 </nav>
 
-<div class="event-banner" id="event-banner" style="display:none" onclick="setPanel('ev',document.querySelector('[data-panel=ev]'))">
+<div class="event-banner" id="event-banner" style="display:none" onclick="setPanel('ck',document.querySelector('[data-panel=ck]'))">
   <span class="event-dot"></span>
   <span class="event-text" id="event-banner-text"></span>
   <span style="color:var(--accent);opacity:.6;font-size:14px">&rsaquo;</span>
@@ -528,13 +529,9 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
   <div class="carousel-wrap"><div class="carousel-track" id="carousel-track"></div></div>
 </div>
 
-<div id="panel-ev" class="panel">
-  <div class="ev-list">
-    <div class="ev-header">
-      <div class="ev-title">Eventos</div>
-      <button class="ev-add-btn" onclick="openSheet('ev-sheet')">+ Novo</button>
-    </div>
-    <div id="ev-content"></div>
+<div id="panel-dash" class="panel">
+  <div style="padding:14px 14px 0">
+    <div id="dash-content"><div style="text-align:center;padding:40px 0;color:var(--text2);font-size:13px">Carregando dashboard...</div></div>
   </div>
 </div>
 
@@ -554,12 +551,20 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
 <div id="panel-ck" class="panel">
   <div class="ck-panel">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <div style="font-size:16px;font-weight:700">Checklists diários</div>
+      <div style="font-size:16px;font-weight:700">Tarefas diárias</div>
       <button id="ck-notif-btn" style="font-size:10px;font-weight:600;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:5px 11px;cursor:pointer;font-family:inherit" onclick="ativarNotificacoesCk()">Ativar notificações</button>
     </div>
-    <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Tarefas diárias da operação. Resetam todo dia à meia-noite.</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px">Resetam todo dia à meia-noite.</div>
     <button class="sh-btn sh-btn-s" id="ck-add-task-btn" style="margin:0 0 14px;padding:10px" onclick="abrirNovaTarefa()">+ Nova tarefa</button>
     <div id="ck-list"></div>
+
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700">Eventos e feriados</div>
+        <button class="ev-add-btn" onclick="openSheet('ev-sheet')">+ Novo</button>
+      </div>
+      <div id="ev-content"></div>
+    </div>
   </div>
 </div>
 
@@ -669,14 +674,14 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
   <div class="sheet-title" id="cont-title">Cobrir vaga</div>
   <div class="sheet-sub">Acione os sugeridos por ordem de prioridade</div>
   <div id="cont-list"></div>
-  <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px">Toque em "Chamar" para enviar WhatsApp. Ao confirmar, toque em "+ Escalar" para adicionar ao turno.</p>
+  <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:10px">Sugeridos aparecem primeiro. "Chamar" envia WA e muda para Aguardando.</p>
 </div>
 
-<div class="sheet" id="cfg-sheet">
+<div class="sheet" id="cfg-sheet" style="padding-bottom:0;display:flex;flex-direction:column">
   <div class="sheet-handle"></div>
   <div class="sheet-title">Configurações</div>
   <div class="sheet-sub">Turnos, mínimos e sincronização</div>
-
+  <div id="cfg-scroll" style="flex:1;overflow-y:auto;padding-bottom:16px">
   <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-md);padding:13px;margin-bottom:16px">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
       <div style="width:8px;height:8px;border-radius:50%;background:var(--s-conf);flex-shrink:0"></div>
@@ -753,7 +758,13 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
     <button class="sh-btn sh-btn-s" style="margin:0;padding:9px" onclick="salvarMensagens()">Salvar mensagens</button>
   </div>
 
-  <button class="sh-btn sh-btn-p" onclick="saveCfg()">Salvar configurações</button>
+  </div><!-- /cfg-scroll -->
+
+  <!-- Rodapé fixo — sempre visível, independente de quanto conteúdo tem acima -->
+  <div style="display:flex;gap:10px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;padding-bottom:calc(12px + env(safe-area-inset-bottom))">
+    <button class="sh-btn sh-btn-s" style="flex:1;margin:0;padding:11px;color:var(--text2)" onclick="closeAll()">Sair sem salvar</button>
+    <button class="sh-btn sh-btn-p" style="flex:1;margin:0;padding:11px" onclick="saveCfg()">Salvar configurações</button>
+  </div>
 </div>
 
 <nav class="bnav">
@@ -761,9 +772,9 @@ body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
     <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
     Turnos
   </button>
-  <button class="bnav-tab" data-panel="ev" onclick="setPanel('ev',this)">
-    <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-    Eventos
+  <button class="bnav-tab" data-panel="dash" onclick="setPanel('dash',this)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
   </button>
   <button class="bnav-tab" data-panel="eq" onclick="setPanel('eq',this)">
     <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -795,7 +806,7 @@ function safeRemove(key){
 }
 
 const JS_DAYS=['dom','seg','ter','qua','qui','sex','sab'];
-const DAY_LBL={dom:'Dom',seg:'Seg',ter:'Ter',qua:'Qua',qui:'Qui',sex:'Sex',sab:'Sáb'};
+const DAY_LBL={dom:'Domingo',seg:'Segunda',ter:'Terça',qua:'Quarta',qui:'Quinta',sex:'Sexta',sab:'Sábado'};
 const DAY_FULL={dom:'Domingo',seg:'Segunda',ter:'Terça',qua:'Quarta',qui:'Quinta',sex:'Sexta',sab:'Sábado'};
 const todayKey=JS_DAYS[new Date().getDay()];
 // Ordem dos dias começando de HOJE: hoje, +1, +2, ... +6
@@ -1069,7 +1080,7 @@ function rerenderAposUndo(){
   buildCarousel();updateBanner();renderCk();updateCkBadge();
   const eqAtivo=document.getElementById('panel-eq');
   if(eqAtivo&&eqAtivo.classList.contains('active')){renderUsers();renderMbEq();}
-  const evAtivo=document.getElementById('panel-ev');
+  const evAtivo=document.getElementById('panel-ck');
   if(evAtivo&&evAtivo.classList.contains('active'))renderEventos();
   const contaAtivo=document.getElementById('panel-conta');
   if(contaAtivo&&contaAtivo.classList.contains('active'))renderConta();
@@ -1520,18 +1531,12 @@ function renderSlide(day){
       html+='<div class="mb-row '+rowCls+'"><div class="mb-av">'+ini(mb.nome)+'</div><div class="mb-info"><div class="mb-name" onclick="editName(this,\''+day+'\',\''+t.id+'\','+idx+')">'+mb.nome+'</div><div class="mb-time-row"><span class="mb-time" onclick="editTime(this,\''+day+'\',\''+t.id+'\','+idx+',\'ini\')">'+mb.ini+'</span><span class="mb-time-sep">-</span><span class="mb-time" onclick="editTime(this,\''+day+'\',\''+t.id+'\','+idx+',\'fim\')">'+mb.fim+'</span></div>'+bagHtml+'</div><div class="mb-right"><span class="status-pill '+spCls(mb.status)+'" onclick="openStatus(\''+day+'\',\''+t.id+'\','+idx+',\''+mb.nome.replace(/'/g,"\\'")+'\')">'+mb.status+(mb.viaApp?'<span style="font-size:8.5px;display:block;opacity:.75">via App</span>':'')+'</span>'+waBtn+'<button class="del-btn" onclick="delMb(\''+day+'\',\''+t.id+'\','+idx+')" title="Remover"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div></div>';
     });
 
-    if(vagas>0){
-      html+='<div class="vaga-wrap"><div class="vaga-row"><div class="vaga-av">'+vagas+'</div><span class="vaga-label">'+vagas+' vaga'+(vagas>1?'s':'')+' em aberto</span><button class="cobrir-btn" onclick="abrirContingencia(\''+day+'\',\''+t.id+'\',\''+t.lbl+'\')">Cobrir agora</button></div>';
-      if(sugs.length){
-        html+='<div class="sug-wrap"><div class="sug-title">Sugestoes</div>';
-        sugs.forEach(function(s){
-          const e=s.eq;
-          const motivoCls=s.prioridade===1?'sug-motivo-rotina':'sug-motivo-disp';
-          html+='<div class="sug-item" onclick="addSug(\''+day+'\',\''+t.id+'\',\''+e.nome.replace(/'/g,"\\'")+'\')"><div class="sug-left"><div class="sug-av">'+ini(e.nome)+'</div><div><span class="sug-name">'+e.nome+'</span><div class="sug-motivo '+motivoCls+'">'+s.motivo+'</div></div></div><button class="sug-add">+ Add</button></div>';
-        });
-        html+='</div>';
-      }
-      html+='</div>';
+    if(vagas>0 || true){ // sempre mostra a opção — turno cheio vira Reserva
+      const labelVaga=vagas>0
+        ?vagas+' vaga'+(vagas>1?'s':'')+' em aberto'
+        :'Turno completo — adicionar como Reserva';
+      const btnColor=vagas>0?'':';background:var(--bg3);color:var(--text2);border:1px solid var(--border)';
+      html+='<div class="vaga-wrap"><div class="vaga-row"><div class="vaga-av" style="'+(vagas===0?'background:var(--bg3);border-color:var(--border2);color:var(--text2)':'')+'">'+Math.max(vagas,0)+'</div><span class="vaga-label" style="'+(vagas===0?'color:var(--text2)':'')+'">'+labelVaga+'</span><button class="cobrir-btn" style="'+btnColor+'" onclick="abrirContingencia(\''+day+'\',\''+t.id+'\',\''+t.lbl+'\')">Cobrir agora</button></div></div>';
     }
 
     html+='<div class="add-row"><button class="add-btn" onclick="openAdd(\''+day+'\',\''+t.id+'\',\''+t.lbl+'\',\''+t.ini+'\',\''+t.fim+'\')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Adicionar motoboy</button></div></div>';
@@ -1649,29 +1654,60 @@ function confirmAdd(){
 }
 function addSug(day,tid,nome){
   const t=CFG[day][tid];
-  SCH[day][tid].mbs.push({nome:nome,ini:t.ini,fim:t.fim,status:'Confirmar'});
-  if((SCH[day][tid].vagas||0)>0)SCH[day][tid].vagas--;
-  saveBackup('Sugestao: '+nome+' adicionado');
+  const vagas=SCH[day][tid].vagas||0;
+  // Se ainda há vaga, adiciona como Confirmar normalmente
+  // Se o turno está cheio, adiciona como Reserva (banco de substitutos)
+  const status=vagas>0?'Confirmar':'Reserva';
+  SCH[day][tid].mbs.push({nome:nome,ini:t.ini,fim:t.fim,status:status});
+  if(vagas>0)SCH[day][tid].vagas=Math.max(0,vagas-1);
+  saveBackup(nome+' adicionado como '+status+' — '+t.lbl);
   renderSlide(day);buildCarousel();
 }
 
 // Fluxo de contingência: acionar reservas rápido quando falta gente
 function abrirContingencia(day,tid,lbl){
   const sugs=getSugs(day,tid);
+  const tcfg=CFG[day]&&CFG[day][tid];
   document.getElementById('cont-title').textContent='Cobrir '+lbl+' — '+DAY_FULL[day];
   let html='';
-  if(!sugs.length){
-    html='<div class="ev-empty">Nenhum sugerido disponível. Use "Adicionar motoboy" para buscar na equipe completa.</div>';
-  }else{
+
+  function itemHtml(e,motivo,motivoCls){
+    const waMsg=tcfg?buildWaMsg(e.nome,lbl,day,tcfg.ini,tcfg.fim):'';
+    const waBtn=e.wa
+      ?('<button class="cont-wa" onclick="waContato(\''+day+'\',\''+tid+'\',999,\''+e.wa+'\',\''+waMsg+'\')">'+
+        '<svg viewBox="0 0 24 24" style="width:12px;height:12px;fill:#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347M12 2a10 10 0 0 1 10 10c0 5.523-4.477 10-10 10a9.96 9.96 0 0 1-4.862-1.262L2 22l1.296-4.946A9.96 9.96 0 0 1 2 12 10 10 0 0 1 12 2"/></svg> Chamar</button>')
+      :'<span class="cont-wa cont-wa-off">Sem WA</span>';
+    return '<div class="cont-item"><div class="cont-left"><div class="sug-av">'+ini(e.nome)+'</div>'
+      +'<div><div class="cont-name">'+e.nome+'</div>'+(motivo?'<div class="sug-motivo '+motivoCls+'">'+motivo+'</div>':'')+'</div></div>'
+      +'<div class="cont-actions">'+waBtn
+      +'<button class="cont-add" onclick="addSug(\''+day+'\',\''+tid+'\',\''+e.nome.replace(/'/g,"\\'")+'\');abrirContingencia(\''+day+'\',\''+tid+'\',\''+lbl+'\')">+ Adicionar</button>'
+      +'</div></div>';
+  }
+
+  // Sugeridos primeiro
+  if(sugs.length){
+    html+='<div class="sug-title" style="margin-bottom:6px">Sugeridos</div>';
     sugs.forEach(function(s){
-      const e=s.eq;
       const motivoCls=s.prioridade===1?'sug-motivo-rotina':'sug-motivo-disp';
-      const tcfg=CFG[day][tid];
-      const waMsg=buildWaMsg(e.nome,lbl,day,tcfg.ini,tcfg.fim);
-      const waBtn=e.wa?('<a class="cont-wa" href="https://wa.me/'+e.wa+'?text='+waMsg+'" target="_blank">Chamar</a>'):'<span class="cont-wa cont-wa-off">Sem WA</span>';
-      html+='<div class="cont-item"><div class="cont-left"><div class="sug-av">'+ini(e.nome)+'</div><div><div class="cont-name">'+e.nome+'</div><div class="sug-motivo '+motivoCls+'">'+s.motivo+'</div></div></div><div class="cont-actions">'+waBtn+'<button class="cont-add" onclick="addSug(\''+day+'\',\''+tid+'\',\''+e.nome.replace(/'/g,"\\'")+'\');abrirContingencia(\''+day+'\',\''+tid+'\',\''+lbl+'\')">+ Escalar</button></div></div>';
+      html+=itemHtml(s.eq,s.motivo,motivoCls);
     });
   }
+
+  // Restante da equipe que não apareceu nas sugestões
+  const nomesNasSugs=sugs.map(function(s){return s.eq.nome;});
+  const jaEscalados=(SCH[day]&&SCH[day][tid])?SCH[day][tid].mbs.map(function(m){return m.nome;}):[]; 
+  const restante=EQUIPE.filter(function(e){
+    return nomesNasSugs.indexOf(e.nome)===-1&&jaEscalados.indexOf(e.nome)===-1;
+  });
+  if(restante.length){
+    html+='<div class="sug-title" style="margin-top:'+(sugs.length?12:0)+'px;margin-bottom:6px">Restante da equipe</div>';
+    restante.forEach(function(e){html+=itemHtml(e,'','');});
+  }
+
+  if(!sugs.length&&!restante.length){
+    html='<div class="ev-empty">Toda a equipe já está escalada neste turno.</div>';
+  }
+
   document.getElementById('cont-list').innerHTML=html;
   openSheet('cont-sheet');
 }
@@ -1706,6 +1742,112 @@ function devolverBag(){
   e.bag=null;e.bagTs=null;
   saveBackup(bagTarget+' devolveu bag');
   closeAll();JS_DAYS.forEach(function(d){renderSlide(d)});
+}
+
+// ── DASHBOARD ─────────────────────────────────────────
+// Grade semanal: Manhã (pequeno) · Tarde (médio) · Noite (grande)
+// Cor: verde = completo, amarelo = parcial, vermelho = crítico
+function renderDash(){
+  const el=document.getElementById('dash-content');
+  if(!el)return;
+
+  // KPIs do dia de hoje
+  const hoje=DAY_ORDER[0];
+  let confHoje=0,vagasHoje=0;
+  turnosOfDay(hoje).forEach(function(t){
+    const td=SCH[hoje]&&SCH[hoje][t.id];if(!td)return;
+    const c=td.mbs.filter(function(m){return m.status==='Confirmado'||m.status==='Reserva';}).length;
+    confHoje+=c;
+    vagasHoje+=(td.vagas||0);
+  });
+
+  // Grade semanal — 7 dias × turnos
+  const SHIFT_SIZES={manha:'30px',almoco:'36px',tarde:'44px',noite:'60px'};
+  function cellColor(conf,min){
+    if(min===0)return'off';
+    if(conf>=min)return'ok';
+    if(conf>=min/2)return'warn';
+    return'bad';
+  }
+
+  // Cabeçalho dos dias
+  const daysHtml=DAY_ORDER.map(function(day,i){
+    const isHoje=i===0;
+    return '<div style="font-size:10px;font-weight:500;text-align:center;color:'+(isHoje?'var(--accent)':'var(--text3)')+'">'+DAY_LBL[day].slice(0,3)+'</div>';
+  }).join('');
+
+  // Linhas de turno
+  function shiftRow(turnoId,lbl,hora){
+    const sz=SHIFT_SIZES[turnoId]||'44px';
+    const cells=DAY_ORDER.map(function(day){
+      const td=SCH[day]&&SCH[day][turnoId];
+      const cfg=CFG[day]&&CFG[day][turnoId];
+      if(!cfg||!cfg.min)return '<div style="height:'+sz+';border-radius:6px;background:var(--bg3);opacity:.4"></div>';
+      const conf=td?td.mbs.filter(function(m){return m.status==='Confirmado'||m.status==='Reserva';}).length:0;
+      const min=cfg.min;
+      const vagas=td?(td.vagas||0):min;
+      const col=cellColor(conf,min);
+      const bgMap={ok:'var(--s-conf-bg)',warn:'var(--s-ag-bg)',bad:'var(--s-ind-bg)',off:'var(--bg3)'};
+      const txtMap={ok:'var(--s-conf)',warn:'var(--s-ag)',bad:'var(--s-ind)',off:'var(--text3)'};
+      const showSub=sz!=='30px';
+      return '<div style="height:'+sz+';border-radius:6px;background:'+bgMap[col]+';border:0.5px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">'
+        +'<span style="font-size:'+(sz==='60px'?'14px':sz==='44px'?'12px':'10px')+';font-weight:500;color:'+txtMap[col]+'">'+conf+'/'+min+'</span>'
+        +(showSub&&vagas>0?'<span style="font-size:8px;color:'+txtMap[col]+';opacity:.75">'+vagas+' vaga'+(vagas>1?'s':'')+'</span>':'')
+        +'</div>';
+    }).join('');
+    return '<div style="display:grid;grid-template-columns:48px repeat(7,minmax(0,1fr));gap:4px;align-items:center;margin-bottom:4px">'
+      +'<div style="font-size:10px;color:var(--text2);text-align:right;padding-right:5px;line-height:1.2">'+lbl+'<br><span style="font-size:9px;color:var(--text3)">'+hora+'</span></div>'
+      +cells+'</div>';
+  }
+
+  const turnos=turnosOfDay(DAY_ORDER[0]);
+  const turnoRows=turnos.map(function(t){
+    return shiftRow(t.id,t.lbl,t.ini);
+  }).join('');
+
+  // Presença da equipe esta semana (bolinhas)
+  const mbPresenca=EQUIPE.slice(0,8).map(function(e){
+    const dots=DAY_ORDER.map(function(day){
+      const td=SCH[day]&&SCH[day];
+      let status='off';
+      Object.values(td||{}).forEach(function(turno){
+        const mb=turno.mbs&&turno.mbs.find(function(m){return m.nome===e.nome;});
+        if(!mb)return;
+        if(mb.status==='Confirmado'||mb.status==='Reserva')status='conf';
+        else if(status==='off'&&(mb.status==='Aguardando'||mb.status==='Confirmar'))status='pend';
+        else if(mb.status==='Indisponível'&&status==='off')status='ind';
+      });
+      const c={conf:'var(--s-conf)',pend:'var(--s-ag)',ind:'var(--s-ind)',off:'var(--border2)'}[status];
+      return '<span style="width:8px;height:8px;border-radius:50%;background:'+c+';flex-shrink:0;display:inline-block"></span>';
+    }).join('');
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:0.5px solid var(--border)">'
+      +'<span style="font-size:11px;color:var(--text)">'+e.nome+'</span>'
+      +'<div style="display:flex;gap:3px">'+dots+'</div>'
+      +'</div>';
+  }).join('');
+
+  el.innerHTML=
+    // KPIs
+    '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px">'
+    +'<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r-md);padding:10px 12px"><div style="font-size:20px;font-weight:600;color:var(--text)">'+confHoje+'</div><div style="font-size:11px;color:var(--text3)">Confirmados hoje</div></div>'
+    +'<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r-md);padding:10px 12px"><div style="font-size:20px;font-weight:600;color:'+(vagasHoje>0?'var(--s-ag)':'var(--s-conf)')+'">'+vagasHoje+'</div><div style="font-size:11px;color:var(--text3)">Vagas em aberto</div></div>'
+    +'</div>'
+    // Legenda
+    +'<div style="display:flex;gap:10px;margin-bottom:10px">'
+    +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--s-conf-bg);display:inline-block"></span>Completo</div>'
+    +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--s-ag-bg);display:inline-block"></span>Parcial</div>'
+    +'<div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="width:8px;height:8px;border-radius:2px;background:var(--s-ind-bg);display:inline-block"></span>Crítico</div>'
+    +'</div>'
+    // Grade
+    +'<div style="display:grid;grid-template-columns:48px repeat(7,minmax(0,1fr));gap:4px;margin-bottom:6px">'
+    +'<div></div>'+daysHtml
+    +'</div>'
+    +turnoRows
+    // Equipe
+    +'<div style="margin-top:16px;padding-top:14px;border-top:0.5px solid var(--border)">'
+    +'<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">Equipe — semana atual</div>'
+    +mbPresenca
+    +'</div>';
 }
 
 function renderEventos(){
@@ -2935,10 +3077,14 @@ function renderSlideMotoboy(day){
       }
     }
 
-    // Vaga aberta (só faz sentido oferecer reserva se ele ainda não está nesse turno)
-    if(idx===-1 && vagas>0){
-      html+='<div class="vaga-wrap"><div class="vaga-row"><div class="vaga-av">'+vagas+'</div><span class="vaga-label">'+vagas+' vaga'+(vagas>1?'s':'')+' disponível</span></div></div>';
-      html+='<div class="mb-action-row"><button class="mb-act-btn mb-act-reservar" onclick="motoboyReservar(\''+day+'\',\''+t.id+'\')">Reservar este turno</button></div>';
+    // Mostra opção de entrar no turno mesmo quando cheio — turno cheio vira Reserva
+    if(idx===-1){
+      if(vagas>0){
+        html+='<div class="vaga-wrap"><div class="vaga-row"><div class="vaga-av">'+vagas+'</div><span class="vaga-label">'+vagas+' vaga'+(vagas>1?'s':'')+' disponível</span></div></div>';
+        html+='<div class="mb-action-row"><button class="mb-act-btn mb-act-confirm" onclick="motoboyReservar(\''+day+'\',\''+t.id+'\',false)">Entrar neste turno</button></div>';
+      }else{
+        html+='<div class="mb-action-row"><button class="mb-act-btn mb-act-reservar" onclick="motoboyReservar(\''+day+'\',\''+t.id+'\',true)" style="font-size:11px">Entrar como Reserva (turno cheio)</button></div>';
+      }
     }
 
     html+='</div>';
@@ -2960,12 +3106,13 @@ function motoboyConfirmar(day,tid,idx){
   setTimeout(function(){window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');},150);
 }
 
-function motoboyReservar(day,tid){
+function motoboyReservar(day,tid,comoReserva){
   const t=CFG[day][tid];
   const nome=SESSION.nome;
-  SCH[day][tid].mbs.push({nome:nome,ini:t.ini,fim:t.fim,status:'Confirmado',viaApp:true,confirmadoPor:nome,confirmadoEm:Date.now()});
-  if((SCH[day][tid].vagas||0)>0)SCH[day][tid].vagas--;
-  saveBackup(nome+' reservou turno pelo app');
+  const status=comoReserva?'Reserva':'Confirmar';
+  SCH[day][tid].mbs.push({nome:nome,ini:t.ini,fim:t.fim,status:status,viaApp:true,confirmadoPor:nome,confirmadoEm:Date.now()});
+  if(!comoReserva&&(SCH[day][tid].vagas||0)>0)SCH[day][tid].vagas--;
+  saveBackup(nome+' entrou como '+status+' pelo app');
   renderSlide(day);buildCarousel();
   const msg=buildWaMsgMotoboyConfirma(day,t.ini,t.fim);
   setTimeout(function(){window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');},150);
@@ -2975,10 +3122,11 @@ function setPanel(id,btn){
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
   document.querySelectorAll('.bnav-tab').forEach(function(b){b.classList.toggle('active',b.dataset.panel===id)});
   document.querySelectorAll('.sidebar-nav-item').forEach(function(b){b.classList.toggle('active',b.dataset.panel===id)});
-  document.getElementById('panel-'+id).classList.add('active');
-  if(id==='ev')renderEventos();
+  const panelEl=document.getElementById('panel-'+id);
+  if(panelEl)panelEl.classList.add('active');
+  if(id==='dash')renderDash();
   if(id==='eq'){renderUsers();renderMbEq();}
-  if(id==='ck')renderCk();
+  if(id==='ck'){renderCk();renderEventos();}
   if(id==='conta')renderConta();
 }
 
