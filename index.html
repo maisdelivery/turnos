@@ -97,8 +97,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .panel{display:none;padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .panel.active{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
-.day-strip-wrap{position:sticky;top:calc(53px + env(safe-area-inset-top));z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:8px 14px 7px}
-.day-strip-row{display:flex;align-items:center;gap:6px}
+.day-strip-wrap{position:sticky;top:calc(53px + env(safe-area-inset-top));z-index:90;background:var(--bg);border-bottom:1px solid var(--border);padding:8px 0 7px}
+.day-strip-row{display:flex;align-items:center;gap:0;padding:0 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.day-strip-row::-webkit-scrollbar{display:none}
+/* Botão com largura fixa: 3 cabem completos + metade do 4º fica visível indicando que tem mais */
+.day-btn{flex:0 0 calc((100vw - 52px) / 3.5);text-align:center;margin:0 3px;white-space:nowrap}
 .week-nav-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s}
 .week-nav-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .week-nav-btn.semana-passada-ativa{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
@@ -404,6 +407,8 @@ body.desktop-mode .panel{margin-left:216px;padding:32px 28px 60px;max-width:680p
 body.desktop-mode #panel-turnos{padding-top:32px}
 body.desktop-mode .carousel-wrap{overflow:visible}
 body.desktop-mode .day-strip-wrap{padding:0;margin-bottom:4px}
+body.desktop-mode .day-btn{flex:0 0 auto}
+body.desktop-mode .day-strip-row{overflow-x:visible;flex-wrap:wrap;gap:4px;padding:0}
 </style>
 </head>
 <body>
@@ -1333,7 +1338,7 @@ function waContato(day,tid,idx,waNum,msg){
   if(mb.status==='Confirmar'){
     mb.status='Aguardando';
     saveBackup(mb.nome+' — WA enviado, aguardando confirmação');
-    renderSlide(day);buildCarousel();
+    refreshSlide(day);buildCarousel();
   }
   if(waNum)window.open('https://wa.me/'+waNum+'?text='+msg,'_blank');
 }
@@ -1397,7 +1402,6 @@ function buildCarousel(){
     const btn=document.createElement('button');
     const dateLabel=dateLabelForDayKey(day,vendoSemanaPassada?-1:0);
     btn.className='day-btn'+(isToday?' today':'')+(alertFlag?' alert':'')+(evDay&&!alertFlag?' event-day':'');
-    // mostra "Hoje" só na semana atual, datas nos outros
     btn.textContent=(isToday?'Hoje':DAY_LBL[day])+' '+dateLabel;
     btn.dataset.idx=i;
     btn.onclick=function(){goDay(i)};
@@ -1409,25 +1413,38 @@ function buildCarousel(){
     track.appendChild(slide);
   });
 
-  goDay(curDayIdx,false);
+  // Pré-renderiza TODOS os slides de uma vez — a troca vira só translateX no CSS,
+  // sem gerar HTML durante a animação. Resultado: transição instantânea e fluida.
+  DAY_ORDER.forEach(function(day){
+    if(vendoSemanaPassada)renderSlideSemanaPassada(day);
+    else renderSlide(day);
+  });
+
+  // Posiciona no dia atual sem animar (estamos construindo, não navegando)
+  const track2=document.getElementById('carousel-track');
+  track2.style.transition='none';
+  track2.style.transform='translateX(-'+(curDayIdx*100)+'%)';
+  document.querySelectorAll('.day-btn').forEach(function(b,i){b.classList.toggle('active',i===curDayIdx)});
+  const active=document.querySelectorAll('.day-btn')[curDayIdx];
+  if(active)active.scrollIntoView({inline:'center',block:'nearest',behavior:'instant'});
 }
 
 function goDay(idx,animate){
   if(animate===undefined)animate=true;
   curDayIdx=idx;
   const track=document.getElementById('carousel-track');
+  // Apenas translada — o HTML já está renderizado, não precisa gerar nada
   track.style.transition=animate?'transform .3s cubic-bezier(.4,0,.2,1)':'none';
   track.style.transform='translateX(-'+(idx*100)+'%)';
   document.querySelectorAll('.day-btn').forEach(function(b,i){b.classList.toggle('active',i===idx)});
   const active=document.querySelectorAll('.day-btn')[idx];
-  // scrollIntoView com block:'nearest' evita mover o scroll vertical da página
   if(active)active.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
-  const day=DAY_ORDER[idx];
-  if(vendoSemanaPassada){
-    renderSlideSemanaPassada(day);
-  }else{
-    renderSlide(day);
-  }
+}
+
+// Atualiza só o slide afetado por uma ação (não re-renderiza os 7)
+function refreshSlide(day){
+  if(vendoSemanaPassada)renderSlideSemanaPassada(day);
+  else renderSlide(day);
 }
 
 // Render da semana passada: mostra os turnos com quem trabalhou
@@ -1531,15 +1548,12 @@ function renderSlide(day){
       html+='<div class="mb-row '+rowCls+'"><div class="mb-av">'+ini(mb.nome)+'</div><div class="mb-info"><div class="mb-name" onclick="editName(this,\''+day+'\',\''+t.id+'\','+idx+')">'+mb.nome+'</div><div class="mb-time-row"><span class="mb-time" onclick="editTime(this,\''+day+'\',\''+t.id+'\','+idx+',\'ini\')">'+mb.ini+'</span><span class="mb-time-sep">-</span><span class="mb-time" onclick="editTime(this,\''+day+'\',\''+t.id+'\','+idx+',\'fim\')">'+mb.fim+'</span></div>'+bagHtml+'</div><div class="mb-right"><span class="status-pill '+spCls(mb.status)+'" onclick="openStatus(\''+day+'\',\''+t.id+'\','+idx+',\''+mb.nome.replace(/'/g,"\\'")+'\')">'+mb.status+(mb.viaApp?'<span style="font-size:8.5px;display:block;opacity:.75">via App</span>':'')+'</span>'+waBtn+'<button class="del-btn" onclick="delMb(\''+day+'\',\''+t.id+'\','+idx+')" title="Remover"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div></div>';
     });
 
-    if(vagas>0 || true){ // sempre mostra a opção — turno cheio vira Reserva
-      const labelVaga=vagas>0
-        ?vagas+' vaga'+(vagas>1?'s':'')+' em aberto'
-        :'Turno completo — adicionar como Reserva';
-      const btnColor=vagas>0?'':';background:var(--bg3);color:var(--text2);border:1px solid var(--border)';
-      html+='<div class="vaga-wrap"><div class="vaga-row"><div class="vaga-av" style="'+(vagas===0?'background:var(--bg3);border-color:var(--border2);color:var(--text2)':'')+'">'+Math.max(vagas,0)+'</div><span class="vaga-label" style="'+(vagas===0?'color:var(--text2)':'')+'">'+labelVaga+'</span><button class="cobrir-btn" style="'+btnColor+'" onclick="abrirContingencia(\''+day+'\',\''+t.id+'\',\''+t.lbl+'\')">Cobrir agora</button></div></div>';
-    }
-
-    html+='<div class="add-row"><button class="add-btn" onclick="openAdd(\''+day+'\',\''+t.id+'\',\''+t.lbl+'\',\''+t.ini+'\',\''+t.fim+'\')"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Adicionar motoboy</button></div></div>';
+    // Um só botão substitui "vaga-wrap + cobrir agora + adicionar motoboy"
+    // Label muda conforme há vaga ou não, mas a ação é sempre a mesma (abrir gaveta)
+    const vagaLabel=vagas>0
+      ?'+ Cobrir vaga'+(vagas>1?' ('+vagas+')':'')
+      :'+ Adicionar / Reserva';
+    html+='<div class="add-row"><button class="add-btn" onclick="abrirContingencia(\''+day+'\',\''+t.id+'\',\''+t.lbl+'\')">'+vagaLabel+'</button></div></div>';
   });
 
   slide.innerHTML=html;
@@ -1611,7 +1625,7 @@ function applyStatus(s){
   }
 
   saveBackup(nome+' -> '+s);
-  closeAll();renderSlide(day);buildCarousel();
+  closeAll();refreshSlide(day);buildCarousel();
 }
 
 function delMb(day,tid,idx){
@@ -1620,7 +1634,7 @@ function delMb(day,tid,idx){
   const conf=SCH[day][tid].mbs.filter(function(m){return ['Confirmado','Reserva'].indexOf(m.status)>-1}).length;
   SCH[day][tid].vagas=Math.max(0,CFG[day][tid].min-conf);
   saveBackup('Removeu '+nome+' do turno');
-  renderSlide(day);buildCarousel();
+  refreshSlide(day);buildCarousel();
 }
 
 function openAdd(day,tid,lbl,ini_t,fim_t){
@@ -1650,7 +1664,7 @@ function confirmAdd(){
   SCH[day][tid].mbs.push({nome:addSel,ini:ini_v,fim:fim_v,status:'Confirmar'});
   if((SCH[day][tid].vagas||0)>0)SCH[day][tid].vagas--;
   saveBackup('Adicionou '+addSel+' ao turno');
-  closeAll();renderSlide(day);buildCarousel();
+  closeAll();refreshSlide(day);buildCarousel();
 }
 function addSug(day,tid,nome){
   const t=CFG[day][tid];
@@ -1661,7 +1675,7 @@ function addSug(day,tid,nome){
   SCH[day][tid].mbs.push({nome:nome,ini:t.ini,fim:t.fim,status:status});
   if(vagas>0)SCH[day][tid].vagas=Math.max(0,vagas-1);
   saveBackup(nome+' adicionado como '+status+' — '+t.lbl);
-  renderSlide(day);buildCarousel();
+  refreshSlide(day);buildCarousel();
 }
 
 // Fluxo de contingência: acionar reservas rápido quando falta gente
@@ -1705,7 +1719,7 @@ function abrirContingencia(day,tid,lbl){
   }
 
   if(!sugs.length&&!restante.length){
-    html='<div class="ev-empty">Toda a equipe já está escalada neste turno.</div>';
+    html='<div class="ev-empty">Toda a equipe já está neste turno.</div>';
   }
 
   document.getElementById('cont-list').innerHTML=html;
@@ -1790,7 +1804,8 @@ function renderDash(){
       const bgMap={ok:'var(--s-conf-bg)',warn:'var(--s-ag-bg)',bad:'var(--s-ind-bg)',off:'var(--bg3)'};
       const txtMap={ok:'var(--s-conf)',warn:'var(--s-ag)',bad:'var(--s-ind)',off:'var(--text3)'};
       const showSub=sz!=='30px';
-      return '<div style="height:'+sz+';border-radius:6px;background:'+bgMap[col]+';border:0.5px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">'
+      const dayIdx=DAY_ORDER.indexOf(day);
+      return '<div onclick="dashNavegar(\''+day+'\',\''+turnoId+'\')" style="height:'+sz+';border-radius:6px;background:'+bgMap[col]+';border:0.5px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;-webkit-tap-highlight-color:transparent">'
         +'<span style="font-size:'+(sz==='60px'?'14px':sz==='44px'?'12px':'10px')+';font-weight:500;color:'+txtMap[col]+'">'+conf+'/'+min+'</span>'
         +(showSub&&vagas>0?'<span style="font-size:8px;color:'+txtMap[col]+';opacity:.75">'+vagas+' vaga'+(vagas>1?'s':'')+'</span>':'')
         +'</div>';
@@ -1800,8 +1815,18 @@ function renderDash(){
       +cells+'</div>';
   }
 
-  const turnos=turnosOfDay(DAY_ORDER[0]);
-  const turnoRows=turnos.map(function(t){
+  // Coleta todos os turnos distintos que existem em qualquer dia da semana
+  // (inclui almoço do domingo mesmo que outros dias não o tenham)
+  const turnosVistos={};
+  const turnosOrdem=['manha','almoco','tarde','noite'];
+  DAY_ORDER.forEach(function(day){
+    turnosOfDay(day).forEach(function(t){
+      if(!turnosVistos[t.id])turnosVistos[t.id]=t;
+    });
+  });
+  const todosTurnos=turnosOrdem.filter(function(id){return turnosVistos[id];}).map(function(id){return turnosVistos[id];});
+
+  const turnoRows=todosTurnos.map(function(t){
     return shiftRow(t.id,t.lbl,t.ini);
   }).join('');
 
@@ -1848,6 +1873,34 @@ function renderDash(){
     +'<div style="font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">Equipe — semana atual</div>'
     +mbPresenca
     +'</div>';
+}
+
+function dashNavegar(day,turnoId){
+  // Vai pra aba Turnos, desloca pro dia certo e rola até o turno
+  setPanel('turnos',document.querySelector('[data-panel="turnos"]'));
+  const idx=DAY_ORDER.indexOf(day);
+  if(idx>=0)goDay(idx);
+  // Aguarda a animação do carrossel e rola até o card do turno específico
+  setTimeout(function(){
+    const slideId='slide-'+day;
+    const slide=document.getElementById(slideId);
+    if(!slide)return;
+    // Procura o card do turno pelo label
+    const cards=slide.querySelectorAll('.turno-card');
+    cards.forEach(function(card){
+      const nameEl=card.querySelector('.turno-name');
+      if(nameEl){
+        const cfg=CFG[day]&&CFG[day][turnoId];
+        if(cfg&&nameEl.textContent.trim()===cfg.lbl){
+          card.scrollIntoView({behavior:'smooth',block:'center'});
+          // Pulsa brevemente o card pra indicar qual é
+          card.style.transition='box-shadow .2s';
+          card.style.boxShadow='0 0 0 2px var(--accent)';
+          setTimeout(function(){card.style.boxShadow='';},800);
+        }
+      }
+    });
+  },380); // depois da animação do carrossel (300ms + margem)
 }
 
 function renderEventos(){
@@ -2011,7 +2064,7 @@ function addMotoboy(){
 function removeMotoboy(idx){
   const e=EQUIPE[idx];
   if(!e)return;
-  const ok=confirm('Remover '+e.nome+' da equipe? Isso não pode ser desfeito.\n\nOs turnos já escalados pra ele em dias futuros vão continuar aparecendo até você ajustar manualmente.');
+  const ok=confirm('Remover '+e.nome+' da equipe? Isso não pode ser desfeito.\n\nOs turnos já confirmados pra ele em dias futuros vão continuar aparecendo até você ajustar manualmente.');
   if(!ok)return;
   EQUIPE.splice(idx,1);
   saveBackup('Motoboy '+e.nome+' removido');
@@ -3032,8 +3085,10 @@ function renderSlideMotoboy(day){
     const idx=td.mbs.findIndex(function(m){return m.nome===nome});
     const vagas=td.vagas||0;
 
-    // Quando confirmado no dia: mostra TODOS os turnos. Senão: só o turno dele ou com vaga.
-    if(!confirmadoNoDia && idx===-1 && vagas<=0)return;
+    // Quando confirmado no dia: mostra TODOS os turnos.
+    // Quando não confirmado: mostra turnos onde está ou com vaga — E turnos cheios (pra oferecer Reserva)
+    // Única exceção: turno sem nenhum motoboy configurado ainda (min=0), esses pulamos
+    if(!confirmadoNoDia && idx===-1 && (CFG[day][t.id].min||0)===0)return;
     any=true;
     const conf=td.mbs.filter(function(m){return ['Confirmado','Reserva'].indexOf(m.status)>-1}).length;
     // Para o MOTOBOY as cores são o oposto do gerencial:
@@ -3073,7 +3128,7 @@ function renderSlideMotoboy(day){
         });
         html+='</div>';
       }else if(idx>-1){
-        html+='<div class="colegas-wrap"><div class="colegas-title">Você é o único escalado até agora nesse turno</div></div>';
+        html+='<div class="colegas-wrap"><div class="colegas-title">Você é o único no turno até agora</div></div>';
       }
     }
 
@@ -3090,7 +3145,7 @@ function renderSlideMotoboy(day){
     html+='</div>';
   });
 
-  if(!any)html+='<div class="ev-empty">Você não está escalado nem há vagas neste dia</div>';
+  if(!any)html+='<div class="ev-empty">Nenhum turno disponível neste dia</div>';
   slide.innerHTML=html;
 }
 
@@ -3101,7 +3156,7 @@ function motoboyConfirmar(day,tid,idx){
   mb.confirmadoPor=SESSION.nome;
   mb.confirmadoEm=Date.now();
   saveBackup(mb.nome+' confirmou presença pelo app');
-  renderSlide(day);buildCarousel();
+  refreshSlide(day);buildCarousel();
   const msg=buildWaMsgMotoboyConfirma(day,mb.ini,mb.fim);
   setTimeout(function(){window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');},150);
 }
@@ -3113,7 +3168,7 @@ function motoboyReservar(day,tid,comoReserva){
   SCH[day][tid].mbs.push({nome:nome,ini:t.ini,fim:t.fim,status:status,viaApp:true,confirmadoPor:nome,confirmadoEm:Date.now()});
   if(!comoReserva&&(SCH[day][tid].vagas||0)>0)SCH[day][tid].vagas--;
   saveBackup(nome+' entrou como '+status+' pelo app');
-  renderSlide(day);buildCarousel();
+  refreshSlide(day);buildCarousel();
   const msg=buildWaMsgMotoboyConfirma(day,t.ini,t.fim);
   setTimeout(function(){window.open('https://wa.me/'+CENTRAL_WA+'?text='+msg,'_blank');},150);
 }
@@ -3508,13 +3563,21 @@ startAutoRefresh();
 // ═══════════════════════════════════════════════════════
 // PWA — registra service worker inline (sem arquivo externo)
 // Permite instalar na tela inicial e abrir mesmo offline.
+// Detecta nova versão e mostra banner discreto pra atualizar com um toque.
 // ═══════════════════════════════════════════════════════
 if('serviceWorker' in navigator){
-  var swCode='self.addEventListener("install",function(e){self.skipWaiting()});'+
-    'self.addEventListener("activate",function(e){e.waitUntil(self.clients.claim())});'+
+  // Cache com versão — ao mudar a versão aqui, o SW antigo é substituído
+  var SW_VERSION='turnos-v8';
+  var swCode='var V="'+SW_VERSION+'";'+
+    'self.addEventListener("install",function(e){self.skipWaiting()});'+
+    'self.addEventListener("activate",function(e){'+
+      'e.waitUntil(caches.keys().then(function(keys){'+
+        'return Promise.all(keys.filter(function(k){return k!==V}).map(function(k){return caches.delete(k)}));'+
+      '}).then(function(){return self.clients.claim()}));'+
+    '});'+
     'self.addEventListener("fetch",function(e){'+
       'if(e.request.method!=="GET")return;'+
-      'e.respondWith(caches.open("turnos-v1").then(function(cache){'+
+      'e.respondWith(caches.open(V).then(function(cache){'+
         'return cache.match(e.request).then(function(cached){'+
           'var net=fetch(e.request).then(function(resp){'+
             'if(resp&&resp.status===200&&e.request.url.indexOf("github.com")===-1&&e.request.url.indexOf("script.google")===-1){cache.put(e.request,resp.clone())}'+
@@ -3527,8 +3590,34 @@ if('serviceWorker' in navigator){
   try{
     var blob=new Blob([swCode],{type:'application/javascript'});
     var swUrl=URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).catch(function(e){console.warn('SW falhou:',e.message)});
+    navigator.serviceWorker.register(swUrl).then(function(reg){
+      // Detecta quando uma atualização está disponível e mostra banner
+      reg.addEventListener('updatefound',function(){
+        var newWorker=reg.installing;
+        if(!newWorker)return;
+        newWorker.addEventListener('statechange',function(){
+          if(newWorker.state==='installed'&&navigator.serviceWorker.controller){
+            mostrarBannerAtualizacao();
+          }
+        });
+      });
+    }).catch(function(e){console.warn('SW falhou:',e.message)});
+    // Verifica atualização a cada vez que o app volta ao foco
+    document.addEventListener('visibilitychange',function(){
+      if(document.visibilityState==='visible'){
+        navigator.serviceWorker.getRegistration().then(function(reg){if(reg)reg.update();});
+      }
+    });
   }catch(e){console.warn('SW nao suportado:',e.message)}
+}
+
+function mostrarBannerAtualizacao(){
+  if(document.getElementById('sw-update-banner'))return;
+  const b=document.createElement('div');
+  b.id='sw-update-banner';
+  b.style.cssText='position:fixed;top:calc(54px + env(safe-area-inset-top));left:12px;right:12px;z-index:999;background:var(--accent);color:#fff;border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 4px 18px rgba(0,0,0,.25);font-size:12px;font-weight:600;cursor:pointer';
+  b.innerHTML='<span>🔄 Nova versão disponível</span><button style="background:rgba(255,255,255,.25);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit" onclick="window.location.reload()">Atualizar agora</button>';
+  document.body.appendChild(b);
 }
 </script>
 </body>
